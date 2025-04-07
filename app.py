@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import shutil
 import time
@@ -56,6 +56,10 @@ STATUS_OPCOES = {
     3: "Em execução",
     4: "Concluído"
 }
+
+# Função para obter o horário ajustado (3 horas atrás)
+def get_adjusted_time():
+    return datetime.now() - timedelta(hours=3)
 
 # Funções auxiliares
 def carregar_config():
@@ -143,7 +147,7 @@ def enviar_para_github():
 def fazer_backup():
     """Cria um backup dos dados atuais"""
     if os.path.exists(LOCAL_FILENAME) and os.path.getsize(LOCAL_FILENAME) > 0:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = get_adjusted_time().strftime("%Y%m%d_%H%M%S")
         backup_name = os.path.join(BACKUP_DIR, f"ordens_servico_{timestamp}.csv")
         shutil.copy(LOCAL_FILENAME, backup_name)
         limpar_backups_antigos(MAX_BACKUPS)
@@ -281,8 +285,8 @@ def cadastrar_os():
             else:
                 df = carregar_csv()
                 novo_id = int(df["ID"].max()) + 1 if not df.empty and not pd.isna(df["ID"].max()) else 1
-                data_formatada = datetime.now().strftime("%d/%m/%Y")
-                hora_formatada = datetime.now().strftime("%H:%M:%S")
+                data_formatada = get_adjusted_time().strftime("%d/%m/%Y")
+                hora_formatada = get_adjusted_time().strftime("%H:%M:%S")
 
                 nova_os = pd.DataFrame([{
                     "ID": novo_id,
@@ -559,8 +563,8 @@ def atualizar_os():
 
         with col2:
             if novo_status == "Concluído":
-                data_atual = datetime.now().strftime("%d/%m/%Y")
-                hora_atual = datetime.now().strftime("%H:%M:%S")
+                data_atual = get_adjusted_time().strftime("%d/%m/%Y")
+                hora_atual = get_adjusted_time().strftime("%H:%M:%S")
                 data_conclusao = st.text_input(
                     "Data de conclusão",
                     value=data_atual,
