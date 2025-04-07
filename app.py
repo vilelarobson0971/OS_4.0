@@ -30,6 +30,7 @@ LOCAL_FILENAME = "ordens_servico.csv"
 BACKUP_DIR = "backups"
 MAX_BACKUPS = 10
 SENHA_SUPERVISAO = "king@2025"
+SENHA_ATUALIZACAO = "king123"
 CONFIG_FILE = "config.json"
 
 # Executantes pré-definidos
@@ -86,8 +87,8 @@ def inicializar_arquivos():
         if usar_github:
             baixar_do_github()
         else:
-            pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
-                                "Tipo", "Status", "Executante", "Data Conclusão"]).to_csv(LOCAL_FILENAME, index=False)
+            pd.DataFrame(columns=["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
+                                "Tipo", "Status", "Executante", "Data Conclusão", "Hora Conclusão"]).to_csv(LOCAL_FILENAME, index=False)
 
 def baixar_do_github():
     """Baixa o arquivo do GitHub se estiver mais atualizado"""
@@ -173,6 +174,8 @@ def carregar_csv():
         # Garante que as colunas importantes são strings
         df["Executante"] = df["Executante"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
+        df["Hora Abertura"] = df["Hora Abertura"].astype(str)
+        df["Hora Conclusão"] = df["Hora Conclusão"].astype(str)
         return df
     except Exception as e:
         st.error(f"Erro ao ler arquivo local: {str(e)}")
@@ -186,8 +189,8 @@ def carregar_csv():
             except:
                 pass
         
-        return pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
-                                   "Tipo", "Status", "Executante", "Data Conclusão"])
+        return pd.DataFrame(columns=["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
+                                   "Tipo", "Status", "Executante", "Data Conclusão", "Hora Conclusão"])
 
 def salvar_csv(df):
     """Salva o DataFrame no arquivo CSV local e faz backup"""
@@ -195,6 +198,8 @@ def salvar_csv(df):
         # Garante que os campos importantes são strings
         df["Executante"] = df["Executante"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
+        df["Hora Abertura"] = df["Hora Abertura"].astype(str)
+        df["Hora Conclusão"] = df["Hora Conclusão"].astype(str)
         
         df.to_csv(LOCAL_FILENAME, index=False)
         fazer_backup()
@@ -214,7 +219,7 @@ def pagina_inicial():
     with col1:
         st.markdown('<div style="font-size: 2.5em; margin-top: 10px;">🔧</div>', unsafe_allow_html=True)
     with col2:
-        st.markdown("<h1 style='font-size: 2.5em;'>SISTEMA DE GESTÃO DE ORDENS DE SERVIÇO</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='font-size: 2.5em;'>GESTÃO DE ORDENS DE SERVIÇO 4.0</h1>", unsafe_allow_html=True)
 
     st.markdown("<p style='text-align: center; font-size: 1.2em;'>King & Joe</p>", unsafe_allow_html=True)
     st.markdown("---")
@@ -243,6 +248,7 @@ def pagina_inicial():
     - 📋 **Listagem** completa de OS cadastradas
     - 🔍 **Busca** avançada por diversos critérios
     - 📊 **Dashboard** com análises gráficas
+    - 🔄 **Atualizar OS** (área restrita)
     - 🔐 **Supervisão** (área restrita)
     """)
 
@@ -276,17 +282,20 @@ def cadastrar_os():
                 df = carregar_csv()
                 novo_id = int(df["ID"].max()) + 1 if not df.empty and not pd.isna(df["ID"].max()) else 1
                 data_formatada = datetime.now().strftime("%d/%m/%Y")
+                hora_formatada = datetime.now().strftime("%H:%M:%S")
 
                 nova_os = pd.DataFrame([{
                     "ID": novo_id,
                     "Descrição": descricao,
                     "Data": data_formatada,
+                    "Hora Abertura": hora_formatada,
                     "Solicitante": solicitante,
                     "Local": local,
                     "Tipo": "",
                     "Status": "Pendente",
                     "Executante": "",
-                    "Data Conclusão": ""
+                    "Data Conclusão": "",
+                    "Hora Conclusão": ""
                 }])
 
                 df = pd.concat([df, nova_os], ignore_index=True)
@@ -478,21 +487,32 @@ def pagina_supervisao():
     opcao_supervisao = st.selectbox(
         "Selecione a função de supervisão:",
         [
-            "🔄 Atualizar OS",
             "💾 Gerenciar Backups",
             "⚙️ Configurar GitHub"
         ]
     )
     
-    if opcao_supervisao == "🔄 Atualizar OS":
-        atualizar_os()
-    elif opcao_supervisao == "💾 Gerenciar Backups":
+    if opcao_supervisao == "💾 Gerenciar Backups":
         gerenciar_backups()
     elif opcao_supervisao == "⚙️ Configurar GitHub":
         configurar_github()
 
 def atualizar_os():
     st.header("🔄 Atualizar Ordem de Serviço")
+    
+    # Verifica se o usuário já está autenticado
+    if not st.session_state.get('autenticado_atualizar', False):
+        senha = st.text_input("Digite a senha para atualizar OS:", type="password")
+        if senha == SENHA_ATUALIZACAO:
+            st.session_state.autenticado_atualizar = True
+            st.rerun()
+        elif senha:  # Só mostra erro se o usuário tentou digitar algo
+            st.error("Senha incorreta!")
+        return
+    
+    # Se chegou aqui, está autenticado
+    st.success("Acesso autorizado para atualização de OS")
+    
     df = carregar_csv()
 
     nao_concluidas = df[df["Status"] != "Concluído"]
@@ -538,20 +558,22 @@ def atualizar_os():
             )
 
         with col2:
-            if novo_status != "Pendente":
+            if novo_status == "Concluído":
                 data_atual = datetime.now().strftime("%d/%m/%Y")
+                hora_atual = datetime.now().strftime("%H:%M:%S")
                 data_conclusao = st.text_input(
-                    "Data de atualização",
-                    value=data_atual if pd.isna(os_data['Data Conclusão']) or os_data['Status'] == "Pendente" else str(
-                        os_data['Data Conclusão']),
-                    disabled=novo_status != "Concluído"
+                    "Data de conclusão",
+                    value=data_atual,
+                    disabled=True
                 )
+                hora_conclusao = hora_atual
             else:
                 data_conclusao = st.text_input(
                     "Data de conclusão (DD/MM/AAAA ou DDMMAAAA)",
                     value=str(os_data['Data Conclusão']) if pd.notna(os_data['Data Conclusão']) else "",
                     disabled=True
                 )
+                hora_conclusao = ""
 
         submitted = st.form_submit_button("Atualizar OS")
 
@@ -568,6 +590,7 @@ def atualizar_os():
                 
                 if novo_status == "Concluído":
                     df.loc[df["ID"] == os_id, "Data Conclusão"] = data_conclusao
+                    df.loc[df["ID"] == os_id, "Hora Conclusão"] = hora_conclusao
                 
                 if salvar_csv(df):
                     st.success("OS atualizada com sucesso! Backup automático realizado.")
@@ -686,6 +709,7 @@ def main():
             "📋 Listar OS",
             "🔍 Buscar OS",
             "📊 Dashboard",
+            "🔄 Atualizar OS",
             "🔐 Supervisão"
         ]
     )
@@ -701,13 +725,15 @@ def main():
         buscar_os()
     elif opcao == "📊 Dashboard":
         dashboard()
+    elif opcao == "🔄 Atualizar OS":
+        atualizar_os()
     elif opcao == "🔐 Supervisão":
         pagina_supervisao()
 
     # Rodapé
     st.sidebar.markdown("---")
     st.sidebar.markdown("**Sistema de Ordens de Serviço**")
-    st.sidebar.markdown("Versão 2.4 com Validação de Credenciais")
+    st.sidebar.markdown("Versão 4.0 com Registro de Horários")
     st.sidebar.markdown("Desenvolvido por Robson Vilela")
 
 if __name__ == "__main__":
