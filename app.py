@@ -2,13 +2,18 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 import shutil
 import time
 import glob
 import base64
 import json
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 # Configurações da página
 st.set_page_config(
@@ -30,16 +35,23 @@ LOCAL_FILENAME = "ordens_servico.csv"
 BACKUP_DIR = "backups"
 MAX_BACKUPS = 10
 SENHA_SUPERVISAO = "king@2025"
-SENHA_ATUALIZACAO = "king123"
 CONFIG_FILE = "config.json"
 
 # Executantes pré-definidos
 EXECUTANTES_PREDEFINIDOS = ["Robson", "Guilherme", "Paulinho"]
 
-# Variáveis globais para configuração do GitHub
+# Variáveis globais para configuração do GitHub e Email
 GITHUB_REPO = None
 GITHUB_FILEPATH = None
 GITHUB_TOKEN = None
+EMAIL_CONFIG = {
+    'enabled': False,
+    'smtp_server': '',
+    'smtp_port': 587,
+    'email_from': '',
+    'email_password': '',
+    'email_to': ''
+}
 
 TIPOS_MANUTENCAO = {
     1: "Elétrica",
@@ -57,14 +69,10 @@ STATUS_OPCOES = {
     4: "Concluído"
 }
 
-# Função para obter o horário ajustado (3 horas atrás)
-def get_adjusted_time():
-    return datetime.now() - timedelta(hours=3)
-
 # Funções auxiliares
 def carregar_config():
-    """Carrega as configurações do GitHub do arquivo config.json"""
-    global GITHUB_REPO, GITHUB_FILEPATH, GITHUB_TOKEN
+    """Carrega as configurações do arquivo config.json"""
+    global GITHUB_REPO, GITHUB_FILEPATH, GITHUB_TOKEN, EMAIL_CONFIG
     try:
         if os.path.exists(CONFIG_FILE):
             with open(CONFIG_FILE) as f:
@@ -72,15 +80,55 @@ def carregar_config():
                 GITHUB_REPO = config.get('github_repo')
                 GITHUB_FILEPATH = config.get('github_filepath')
                 GITHUB_TOKEN = config.get('github_token')
+                
+                # Carrega configurações de email se existirem
+                if 'email_config' in config:
+                    EMAIL_CONFIG.update(config['email_config'])
     except Exception as e:
         st.error(f"Erro ao carregar configurações: {str(e)}")
+
+def enviar_backup_email():
+    """Envia o arquivo atual como anexo por email"""
+    if not EMAIL_CONFIG['enabled']:
+        return False
+    
+    try:
+        # Criar mensagem
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_CONFIG['email_from']
+        msg['To'] = EMAIL_CONFIG['email_to']
+        msg['Subject'] = f"Backup Ordens de Serviço - {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+
+        # Corpo do email
+        body = f"Backup automático do sistema de ordens de serviço em anexo.\n\nData: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
+        msg.attach(MIMEText(body, 'plain'))
+
+        # Anexar arquivo
+        with open(LOCAL_FILENAME, "rb") as attachment:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', 
+                          f"attachment; filename= {LOCAL_FILENAME}")
+            msg.attach(part)
+
+        # Enviar email
+        with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
+            server.starttls()
+            server.login(EMAIL_CONFIG['email_from'], EMAIL_CONFIG['email_password'])
+            server.send_message(msg)
+        
+        return True
+    except Exception as e:
+        st.error(f"Erro ao enviar email: {str(e)}")
+        return False
 
 def inicializar_arquivos():
     """Garante que todos os arquivos necessários existam e estejam válidos"""
     # Criar diretório de backups se não existir
     os.makedirs(BACKUP_DIR, exist_ok=True)
     
-    # Carregar configurações do GitHub
+    # Carregar configurações
     carregar_config()
     
     # Verificar se temos configuração do GitHub e se o módulo está disponível
@@ -91,8 +139,8 @@ def inicializar_arquivos():
         if usar_github:
             baixar_do_github()
         else:
-            pd.DataFrame(columns=["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
-                                "Tipo", "Status", "Executante", "Data Conclusão", "Hora Conclusão"]).to_csv(LOCAL_FILENAME, index=False)
+            pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
+                                "Tipo", "Status", "Executante", "Data Conclusão"]).to_csv(LOCAL_FILENAME, index=False)
 
 def baixar_do_github():
     """Baixa o arquivo do GitHub se estiver mais atualizado"""
@@ -147,10 +195,18 @@ def enviar_para_github():
 def fazer_backup():
     """Cria um backup dos dados atuais"""
     if os.path.exists(LOCAL_FILENAME) and os.path.getsize(LOCAL_FILENAME) > 0:
-        timestamp = get_adjusted_time().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_name = os.path.join(BACKUP_DIR, f"ordens_servico_{timestamp}.csv")
         shutil.copy(LOCAL_FILENAME, backup_name)
         limpar_backups_antigos(MAX_BACKUPS)
+        
+        # Tentar enviar por email se configurado
+        if EMAIL_CONFIG['enabled']:
+            if enviar_backup_email():
+                st.success("Backup enviado por e-mail com sucesso!")
+            else:
+                st.warning("Backup local criado, mas falha ao enviar por e-mail")
+        
         return backup_name
     return None
 
@@ -178,8 +234,6 @@ def carregar_csv():
         # Garante que as colunas importantes são strings
         df["Executante"] = df["Executante"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
-        df["Hora Abertura"] = df["Hora Abertura"].astype(str)
-        df["Hora Conclusão"] = df["Hora Conclusão"].astype(str)
         return df
     except Exception as e:
         st.error(f"Erro ao ler arquivo local: {str(e)}")
@@ -193,8 +247,8 @@ def carregar_csv():
             except:
                 pass
         
-        return pd.DataFrame(columns=["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
-                                   "Tipo", "Status", "Executante", "Data Conclusão", "Hora Conclusão"])
+        return pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
+                                   "Tipo", "Status", "Executante", "Data Conclusão"])
 
 def salvar_csv(df):
     """Salva o DataFrame no arquivo CSV local e faz backup"""
@@ -202,8 +256,6 @@ def salvar_csv(df):
         # Garante que os campos importantes são strings
         df["Executante"] = df["Executante"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
-        df["Hora Abertura"] = df["Hora Abertura"].astype(str)
-        df["Hora Conclusão"] = df["Hora Conclusão"].astype(str)
         
         df.to_csv(LOCAL_FILENAME, index=False)
         fazer_backup()
@@ -223,7 +275,7 @@ def pagina_inicial():
     with col1:
         st.markdown('<div style="font-size: 2.5em; margin-top: 10px;">🔧</div>', unsafe_allow_html=True)
     with col2:
-        st.markdown("<h1 style='font-size: 2.5em;'>GESTÃO DE ORDENS DE SERVIÇO 4.0</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='font-size: 2.5em;'>SISTEMA DE GESTÃO DE ORDENS DE SERVIÇO</h1>", unsafe_allow_html=True)
 
     st.markdown("<p style='text-align: center; font-size: 1.2em;'>King & Joe</p>", unsafe_allow_html=True)
     st.markdown("---")
@@ -252,7 +304,6 @@ def pagina_inicial():
     - 📋 **Listagem** completa de OS cadastradas
     - 🔍 **Busca** avançada por diversos critérios
     - 📊 **Dashboard** com análises gráficas
-    - 🔄 **Atualizar OS** (área restrita)
     - 🔐 **Supervisão** (área restrita)
     """)
 
@@ -263,7 +314,12 @@ def pagina_inicial():
             st.write(f"Último backup: {os.path.basename(backups[0])}")
             st.write(f"Total de backups: {len(backups)}")
 
-    # Mostra status de sincronização com GitHub
+    # Mostra status de sincronização
+    if EMAIL_CONFIG['enabled']:
+        st.info("✅ Envio de backups por e-mail ativo")
+    else:
+        st.warning("⚠️ Envio de backups por e-mail não configurado")
+
     if GITHUB_AVAILABLE and GITHUB_REPO:
         st.info("✅ Sincronização com GitHub ativa")
     elif GITHUB_AVAILABLE:
@@ -285,21 +341,18 @@ def cadastrar_os():
             else:
                 df = carregar_csv()
                 novo_id = int(df["ID"].max()) + 1 if not df.empty and not pd.isna(df["ID"].max()) else 1
-                data_formatada = get_adjusted_time().strftime("%d/%m/%Y")
-                hora_formatada = get_adjusted_time().strftime("%H:%M:%S")
+                data_formatada = datetime.now().strftime("%d/%m/%Y")
 
                 nova_os = pd.DataFrame([{
                     "ID": novo_id,
                     "Descrição": descricao,
                     "Data": data_formatada,
-                    "Hora Abertura": hora_formatada,
                     "Solicitante": solicitante,
                     "Local": local,
                     "Tipo": "",
                     "Status": "Pendente",
                     "Executante": "",
-                    "Data Conclusão": "",
-                    "Hora Conclusão": ""
+                    "Data Conclusão": ""
                 }])
 
                 df = pd.concat([df, nova_os], ignore_index=True)
@@ -491,32 +544,24 @@ def pagina_supervisao():
     opcao_supervisao = st.selectbox(
         "Selecione a função de supervisão:",
         [
+            "🔄 Atualizar OS",
             "💾 Gerenciar Backups",
+            "📧 Configurar E-mail",
             "⚙️ Configurar GitHub"
         ]
     )
     
-    if opcao_supervisao == "💾 Gerenciar Backups":
+    if opcao_supervisao == "🔄 Atualizar OS":
+        atualizar_os()
+    elif opcao_supervisao == "💾 Gerenciar Backups":
         gerenciar_backups()
+    elif opcao_supervisao == "📧 Configurar E-mail":
+        configurar_email()
     elif opcao_supervisao == "⚙️ Configurar GitHub":
         configurar_github()
 
 def atualizar_os():
     st.header("🔄 Atualizar Ordem de Serviço")
-    
-    # Verifica se o usuário já está autenticado
-    if not st.session_state.get('autenticado_atualizar', False):
-        senha = st.text_input("Digite a senha para atualizar OS:", type="password")
-        if senha == SENHA_ATUALIZACAO:
-            st.session_state.autenticado_atualizar = True
-            st.rerun()
-        elif senha:  # Só mostra erro se o usuário tentou digitar algo
-            st.error("Senha incorreta!")
-        return
-    
-    # Se chegou aqui, está autenticado
-    st.success("Acesso autorizado para atualização de OS")
-    
     df = carregar_csv()
 
     nao_concluidas = df[df["Status"] != "Concluído"]
@@ -562,22 +607,20 @@ def atualizar_os():
             )
 
         with col2:
-            if novo_status == "Concluído":
-                data_atual = get_adjusted_time().strftime("%d/%m/%Y")
-                hora_atual = get_adjusted_time().strftime("%H:%M:%S")
+            if novo_status != "Pendente":
+                data_atual = datetime.now().strftime("%d/%m/%Y")
                 data_conclusao = st.text_input(
-                    "Data de conclusão",
-                    value=data_atual,
-                    disabled=True
+                    "Data de atualização",
+                    value=data_atual if pd.isna(os_data['Data Conclusão']) or os_data['Status'] == "Pendente" else str(
+                        os_data['Data Conclusão']),
+                    disabled=novo_status != "Concluído"
                 )
-                hora_conclusao = hora_atual
             else:
                 data_conclusao = st.text_input(
                     "Data de conclusão (DD/MM/AAAA ou DDMMAAAA)",
                     value=str(os_data['Data Conclusão']) if pd.notna(os_data['Data Conclusão']) else "",
                     disabled=True
                 )
-                hora_conclusao = ""
 
         submitted = st.form_submit_button("Atualizar OS")
 
@@ -594,7 +637,6 @@ def atualizar_os():
                 
                 if novo_status == "Concluído":
                     df.loc[df["ID"] == os_id, "Data Conclusão"] = data_conclusao
-                    df.loc[df["ID"] == os_id, "Hora Conclusão"] = hora_conclusao
                 
                 if salvar_csv(df):
                     st.success("OS atualizada com sucesso! Backup automático realizado.")
@@ -648,6 +690,56 @@ def gerenciar_backups():
         except Exception as e:
             st.error(f"Erro ao restaurar: {str(e)}")
 
+def configurar_email():
+    st.header("📧 Configuração de E-mail para Backups")
+    global EMAIL_CONFIG
+    
+    with st.form("email_config_form"):
+        st.markdown("""
+        **Configurações SMTP para envio de backups automáticos**  
+        Exemplo para Gmail:  
+        - Servidor: `smtp.gmail.com`  
+        - Porta: `587`  
+        - Use uma [senha de app](https://myaccount.google.com/apppasswords) para autenticação
+        """)
+        
+        email_enabled = st.checkbox("Ativar envio de backups por e-mail", value=EMAIL_CONFIG['enabled'])
+        smtp_server = st.text_input("Servidor SMTP", value=EMAIL_CONFIG['smtp_server'])
+        smtp_port = st.number_input("Porta SMTP", min_value=1, max_value=65535, value=EMAIL_CONFIG['smtp_port'])
+        email_from = st.text_input("E-mail remetente", value=EMAIL_CONFIG['email_from'])
+        email_password = st.text_input("Senha/Senha de App", type="password", value=EMAIL_CONFIG['email_password'])
+        email_to = st.text_input("E-mail destinatário", value=EMAIL_CONFIG['email_to'])
+        
+        submitted = st.form_submit_button("Salvar Configurações de E-mail")
+        
+        if submitted:
+            EMAIL_CONFIG.update({
+                'enabled': email_enabled,
+                'smtp_server': smtp_server,
+                'smtp_port': smtp_port,
+                'email_from': email_from,
+                'email_password': email_password,
+                'email_to': email_to
+            })
+            
+            # Salva no arquivo de configuração
+            try:
+                config = {}
+                if os.path.exists(CONFIG_FILE):
+                    with open(CONFIG_FILE) as f:
+                        config = json.load(f)
+                
+                config['email_config'] = EMAIL_CONFIG
+                
+                with open(CONFIG_FILE, 'w') as f:
+                    json.dump(config, f)
+                
+                st.success("Configurações de e-mail salvas com sucesso!")
+                time.sleep(1)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erro ao salvar configurações: {str(e)}")
+
 def configurar_github():
     st.header("⚙️ Configuração do GitHub")
     global GITHUB_REPO, GITHUB_FILEPATH, GITHUB_TOKEN
@@ -677,6 +769,13 @@ def configurar_github():
                         'github_filepath': filepath,
                         'github_token': token
                     }
+                    
+                    # Mantém as configurações de email se existirem
+                    if os.path.exists(CONFIG_FILE):
+                        with open(CONFIG_FILE) as f:
+                            existing_config = json.load(f)
+                            if 'email_config' in existing_config:
+                                config['email_config'] = existing_config['email_config']
                     
                     with open(CONFIG_FILE, 'w') as f:
                         json.dump(config, f)
@@ -713,7 +812,6 @@ def main():
             "📋 Listar OS",
             "🔍 Buscar OS",
             "📊 Dashboard",
-            "🔄 Atualizar OS",
             "🔐 Supervisão"
         ]
     )
@@ -729,15 +827,13 @@ def main():
         buscar_os()
     elif opcao == "📊 Dashboard":
         dashboard()
-    elif opcao == "🔄 Atualizar OS":
-        atualizar_os()
     elif opcao == "🔐 Supervisão":
         pagina_supervisao()
 
     # Rodapé
     st.sidebar.markdown("---")
     st.sidebar.markdown("**Sistema de Ordens de Serviço**")
-    st.sidebar.markdown("Versão 4.0 com Registro de Horários")
+    st.sidebar.markdown("Versão 2.5 com Backup por E-mail")
     st.sidebar.markdown("Desenvolvido por Robson Vilela")
 
 if __name__ == "__main__":
