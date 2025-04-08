@@ -3,8 +3,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from datetime import datetime  # Corrigido: importação de datetime
 
-def enviar_backup_email(destinatario):
+def enviar_backup_email(destinatario, arquivo_anexo):
     """Envia o arquivo atual como anexo por email"""
     try:
         # Configurações do servidor SMTP (exemplo para Gmail)
@@ -24,14 +25,12 @@ def enviar_backup_email(destinatario):
         msg.attach(MIMEText(body, 'plain'))
 
         # Anexar arquivo
-        filename = LOCAL_FILENAME
-        attachment = open(filename, "rb")
-
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload(attachment.read())
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition', f"attachment; filename= {filename}")
-        msg.attach(part)
+        with open(arquivo_anexo, "rb") as attachment:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f"attachment; filename= {arquivo_anexo}")
+            msg.attach(part)
 
         # Enviar email
         server = smtplib.SMTP(smtp_server, smtp_port)
@@ -40,7 +39,9 @@ def enviar_backup_email(destinatario):
         server.sendmail(email_remetente, destinatario, msg.as_string())
         server.quit()
         
+        print("Email enviado com sucesso!")
         return True
+
     except Exception as e:
-        st.error(f"Erro ao enviar email: {str(e)}")
+        print(f"Erro ao enviar email: {str(e)}")
         return False
