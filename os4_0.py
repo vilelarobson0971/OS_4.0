@@ -26,14 +26,19 @@ except ImportError:
     st.warning("Funcionalidade do GitHub não disponível (PyGithub não instalado)")
 
 # Constantes
-LOCAL_FILENAME = "ordens_servico.csv"
+LOCAL_FILENAME = "ordens_servico4.0.csv"  # Nome do arquivo atualizado
 BACKUP_DIR = "backups"
 MAX_BACKUPS = 10
 SENHA_SUPERVISAO = "king@2025"
 CONFIG_FILE = "config.json"
 
 # Executantes pré-definidos
-EXECUTANTES_PREDEFINIDOS = ["Robson", "Guilherme", "Paulinho", "Outro"]
+EXECUTANTES_PREDEFINIDOS = ["Robson", "Guilherme", "Paulinho"]
+
+# Variáveis globais para configuração do GitHub
+GITHUB_REPO = None
+GITHUB_FILEPATH = None
+GITHUB_TOKEN = None
 
 TIPOS_MANUTENCAO = {
     1: "Elétrica",
@@ -50,11 +55,6 @@ STATUS_OPCOES = {
     3: "Em execução",
     4: "Concluído"
 }
-
-# Variáveis globais para configuração do GitHub
-GITHUB_REPO = None
-GITHUB_FILEPATH = None
-GITHUB_TOKEN = None
 
 # Funções auxiliares
 def carregar_config():
@@ -87,7 +87,7 @@ def inicializar_arquivos():
             baixar_do_github()
         else:
             pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
-                                "Tipo", "Status", "Executante", "Executante 2", "Data Conclusão"]).to_csv(LOCAL_FILENAME, index=False)
+                                "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"]).to_csv(LOCAL_FILENAME, index=False)
 
 def baixar_do_github():
     """Baixa o arquivo do GitHub se estiver mais atualizado"""
@@ -170,12 +170,9 @@ def carregar_csv():
     """Carrega os dados do CSV local"""
     try:
         df = pd.read_csv(LOCAL_FILENAME)
-        # Garante que a coluna Executante 2 existe
-        if "Executante 2" not in df.columns:
-            df["Executante 2"] = ""
         # Garante que as colunas importantes são strings
-        df["Executante"] = df["Executante"].astype(str)
-        df["Executante 2"] = df["Executante 2"].astype(str)
+        df["Executante1"] = df["Executante1"].astype(str)
+        df["Executante2"] = df["Executante2"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
         return df
     except Exception as e:
@@ -185,25 +182,20 @@ def carregar_csv():
         if backup:
             try:
                 df = pd.read_csv(backup)
-                if "Executante 2" not in df.columns:
-                    df["Executante 2"] = ""
                 df.to_csv(LOCAL_FILENAME, index=False)  # Restaura o arquivo principal
                 return df
             except:
                 pass
         
         return pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
-                                   "Tipo", "Status", "Executante", "Executante 2", "Data Conclusão"])
+                                   "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"])
 
 def salvar_csv(df):
     """Salva o DataFrame no arquivo CSV local e faz backup"""
     try:
         # Garante que os campos importantes são strings
-        df["Executante"] = df["Executante"].astype(str)
-        if "Executante 2" in df.columns:
-            df["Executante 2"] = df["Executante 2"].astype(str)
-        else:
-            df["Executante 2"] = ""
+        df["Executante1"] = df["Executante1"].astype(str)
+        df["Executante2"] = df["Executante2"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
         
         df.to_csv(LOCAL_FILENAME, index=False)
@@ -295,8 +287,8 @@ def cadastrar_os():
                     "Local": local,
                     "Tipo": "",
                     "Status": "Pendente",
-                    "Executante": "",
-                    "Executante 2": "",
+                    "Executante1": "",
+                    "Executante2": "",
                     "Data Conclusão": ""
                 }])
 
@@ -325,10 +317,7 @@ def listar_os():
         if filtro_tipo != "Todos":
             df = df[df["Tipo"] == filtro_tipo]
 
-        # Mostra ambos os executantes na listagem
-        df_display = df.copy()
-        df_display["Executantes"] = df["Executante"] + " / " + df["Executante 2"].replace("", "-")
-        st.dataframe(df_display.drop(columns=["Executante", "Executante 2"]), use_container_width=True)
+        st.dataframe(df, use_container_width=True)
 
 def buscar_os():
     st.header("🔍 Busca Avançada")
@@ -342,7 +331,7 @@ def buscar_os():
         col1, col2 = st.columns([1, 3])
         with col1:
             criterio = st.radio("Critério de busca:",
-                              ["Status", "ID", "Solicitante", "Local", "Tipo", "Executante", "Executante 2"])
+                              ["Status", "ID", "Solicitante", "Local", "Tipo", "Executante1", "Executante2"])
         with col2:
             if criterio == "ID":
                 busca = st.number_input("Digite o ID da OS", min_value=1)
@@ -359,10 +348,7 @@ def buscar_os():
 
     if not resultado.empty:
         st.success(f"Encontradas {len(resultado)} OS:")
-        # Mostra ambos os executantes na listagem
-        resultado_display = resultado.copy()
-        resultado_display["Executantes"] = resultado["Executante"] + " / " + resultado["Executante 2"].replace("", "-")
-        st.dataframe(resultado_display.drop(columns=["Executante", "Executante 2"]), use_container_width=True)
+        st.dataframe(resultado, use_container_width=True)
     else:
         st.warning("Nenhuma OS encontrada com os critérios informados.")
 
@@ -410,19 +396,16 @@ def dashboard():
             st.warning("Nenhum dado de tipo disponível")
 
     with tab2:
-        st.subheader("OS por Executante")
-        # Combina executantes principais e secundários
-        executantes_principais = df[df["Executante"] != ""]["Executante"].value_counts()
-        executantes_secundarios = df[df["Executante 2"] != ""]["Executante 2"].value_counts()
+        st.subheader("OS por Executantes")
+        # Combina os dois executantes para análise
+        executantes = pd.concat([df["Executante1"], df["Executante2"]])
+        executante_counts = executantes[executantes != ""].value_counts()
         
-        # Combina as contagens
-        todos_executantes = pd.concat([executantes_principais, executantes_secundarios]).groupby(level=0).sum()
-        
-        if not todos_executantes.empty:
+        if not executante_counts.empty:
             fig, ax = plt.subplots(figsize=(4, 2))
             bars = sns.barplot(
-                x=todos_executantes.values,
-                y=todos_executantes.index,
+                x=executante_counts.values,
+                y=executante_counts.index,
                 palette="rocket",
                 ax=ax
             )
@@ -442,7 +425,7 @@ def dashboard():
             
             plt.ylabel("Executante", fontsize=9)
             ax.set_yticklabels(ax.get_yticklabels(), fontsize=8)
-            ax.set_title("OS por Executante (principal + secundário)", fontsize=10)
+            ax.set_title("OS por Executantes", fontsize=10)
             st.pyplot(fig)
         else:
             st.warning("Nenhuma OS atribuída a executantes")
@@ -547,32 +530,32 @@ def atualizar_os():
             )
 
             # Executante 1
-            executante_atual = str(os_data["Executante"]) if pd.notna(os_data["Executante"]) else ""
+            executante1_atual = str(os_data["Executante1"]) if pd.notna(os_data["Executante1"]) else ""
             try:
-                index_executante = EXECUTANTES_PREDEFINIDOS.index(executante_atual)
+                index_executante1 = EXECUTANTES_PREDEFINIDOS.index(executante1_atual)
             except ValueError:
-                index_executante = 0
+                index_executante1 = 0
 
-            executante = st.selectbox(
+            executante1 = st.selectbox(
                 "Executante Principal*",
                 EXECUTANTES_PREDEFINIDOS,
-                index=index_executante
+                index=index_executante1
             )
 
-            # Executante 2
-            executante2_atual = str(os_data["Executante 2"]) if "Executante 2" in os_data and pd.notna(os_data["Executante 2"]) else ""
+        with col2:
+            # Executante 2 (opcional)
+            executante2_atual = str(os_data["Executante2"]) if pd.notna(os_data["Executante2"]) else ""
             try:
                 index_executante2 = EXECUTANTES_PREDEFINIDOS.index(executante2_atual)
             except ValueError:
                 index_executante2 = 0
 
             executante2 = st.selectbox(
-                "Executante Secundário",
+                "Executante Secundário (opcional)",
                 [""] + EXECUTANTES_PREDEFINIDOS,
-                index=index_executante2 + 1 if executante2_atual else 0
+                index=0 if executante2_atual == "" else EXECUTANTES_PREDEFINIDOS.index(executante2_atual) + 1
             )
 
-        with col2:
             if novo_status != "Pendente":
                 data_atual = datetime.now().strftime("%d/%m/%Y")
                 data_conclusao = st.text_input(
@@ -591,15 +574,15 @@ def atualizar_os():
         submitted = st.form_submit_button("Atualizar OS")
 
         if submitted:
-            if novo_status in ["Em execução", "Concluído"] and not executante:
-                st.error("Selecione pelo menos o executante principal para este status!")
+            if novo_status in ["Em execução", "Concluído"] and not executante1:
+                st.error("Selecione pelo menos um executante principal para este status!")
             elif novo_status == "Concluído" and not data_conclusao:
                 st.error("Informe a data de conclusão!")
             else:
                 # Atualiza todos os campos relevantes
                 df.loc[df["ID"] == os_id, "Status"] = novo_status
-                df.loc[df["ID"] == os_id, "Executante"] = executante
-                df.loc[df["ID"] == os_id, "Executante 2"] = executante2 if executante2 else ""
+                df.loc[df["ID"] == os_id, "Executante1"] = executante1
+                df.loc[df["ID"] == os_id, "Executante2"] = executante2
                 df.loc[df["ID"] == os_id, "Tipo"] = tipo
                 
                 if novo_status == "Concluído":
@@ -669,7 +652,7 @@ def configurar_github():
     
     with st.form("github_config_form"):
         repo = st.text_input("Repositório GitHub (user/repo)", value=GITHUB_REPO or "vilelarobson0971/os_manut")
-        filepath = st.text_input("Caminho do arquivo no repositório", value=GITHUB_FILEPATH or "ordens_servico.csv")
+        filepath = st.text_input("Caminho do arquivo no repositório", value=GITHUB_FILEPATH or "ordens_servico4.0.csv")
         token = st.text_input("Token de acesso GitHub", type="password", value=GITHUB_TOKEN or "")
         
         submitted = st.form_submit_button("Salvar Configurações")
@@ -743,7 +726,7 @@ def main():
     # Rodapé
     st.sidebar.markdown("---")
     st.sidebar.markdown("**Sistema de Ordens de Serviço**")
-    st.sidebar.markdown("Versão 2.5 com Suporte a Dois Executantes")
+    st.sidebar.markdown("Versão 4.0 com Múltiplos Executantes")
     st.sidebar.markdown("Desenvolvido por Robson Vilela")
 
 if __name__ == "__main__":
