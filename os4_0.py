@@ -70,6 +70,14 @@ def carregar_config():
     except Exception as e:
         st.error(f"Erro ao carregar configurações: {str(e)}")
 
+def converter_arquivo_antigo(df):
+    """Converte o formato antigo (com 'Executante') para o novo (com 'Executante1' e 'Executante2')"""
+    if 'Executante' in df.columns and 'Executante1' not in df.columns:
+        df['Executante1'] = df['Executante']
+        df['Executante2'] = ""
+        df.drop('Executante', axis=1, inplace=True)
+    return df
+
 def inicializar_arquivos():
     """Garante que todos os arquivos necessários existam e estejam válidos"""
     # Criar diretório de backups se não existir
@@ -170,10 +178,21 @@ def carregar_csv():
     """Carrega os dados do CSV local"""
     try:
         df = pd.read_csv(LOCAL_FILENAME)
+        
+        # Verifica e converte o formato antigo para o novo
+        df = converter_arquivo_antigo(df)
+        
+        # Garante que as colunas importantes existem
+        if 'Executante1' not in df.columns:
+            df['Executante1'] = ""
+        if 'Executante2' not in df.columns:
+            df['Executante2'] = ""
+        
         # Garante que as colunas importantes são strings
         df["Executante1"] = df["Executante1"].astype(str)
         df["Executante2"] = df["Executante2"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
+        
         return df
     except Exception as e:
         st.error(f"Erro ao ler arquivo local: {str(e)}")
@@ -182,11 +201,13 @@ def carregar_csv():
         if backup:
             try:
                 df = pd.read_csv(backup)
+                df = converter_arquivo_antigo(df)
                 df.to_csv(LOCAL_FILENAME, index=False)  # Restaura o arquivo principal
                 return df
-            except:
-                pass
+            except Exception as e:
+                st.error(f"Erro ao carregar backup: {str(e)}")
         
+        # Retorna um DataFrame vazio com as colunas corretas
         return pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
                                    "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"])
 
