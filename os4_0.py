@@ -94,8 +94,9 @@ def inicializar_arquivos():
         if usar_github:
             baixar_do_github()
         else:
-            pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
-                                "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"]).to_csv(LOCAL_FILENAME, index=False)
+            df = pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
+                                     "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"])
+            df.to_csv(LOCAL_FILENAME, index=False)
 
 def baixar_do_github():
     """Baixa o arquivo do GitHub se estiver mais atualizado"""
@@ -113,7 +114,7 @@ def baixar_do_github():
         file_content = contents.decoded_content.decode('utf-8')
         
         # Salvar localmente
-        with open(LOCAL_FILENAME, 'w') as f:
+        with open(LOCAL_FILENAME, 'w', encoding='utf-8') as f:
             f.write(file_content)
             
         return True
@@ -132,7 +133,7 @@ def enviar_para_github():
         g = Github(GITHUB_TOKEN)
         repo = g.get_repo(GITHUB_REPO)
         
-        with open(LOCAL_FILENAME, 'r') as f:
+        with open(LOCAL_FILENAME, 'r', encoding='utf-8') as f:
             content = f.read()
         
         # Verifica se o arquivo já existe no GitHub
@@ -177,16 +178,22 @@ def carregar_ultimo_backup():
 def carregar_csv():
     """Carrega os dados do CSV local"""
     try:
+        # Verifica se o arquivo existe, se não existir, cria um novo
+        if not os.path.exists(LOCAL_FILENAME):
+            inicializar_arquivos()
+            
         df = pd.read_csv(LOCAL_FILENAME)
         
         # Verifica e converte o formato antigo para o novo
         df = converter_arquivo_antigo(df)
         
         # Garante que as colunas importantes existem
-        if 'Executante1' not in df.columns:
-            df['Executante1'] = ""
-        if 'Executante2' not in df.columns:
-            df['Executante2'] = ""
+        colunas_necessarias = ["ID", "Descrição", "Data", "Solicitante", "Local", 
+                             "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"]
+        
+        for coluna in colunas_necessarias:
+            if coluna not in df.columns:
+                df[coluna] = ""
         
         # Garante que as colunas importantes são strings
         df["Executante1"] = df["Executante1"].astype(str)
@@ -214,12 +221,20 @@ def carregar_csv():
 def salvar_csv(df):
     """Salva o DataFrame no arquivo CSV local e faz backup"""
     try:
+        # Garante que todas as colunas necessárias existem
+        colunas_necessarias = ["ID", "Descrição", "Data", "Solicitante", "Local", 
+                             "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"]
+        
+        for coluna in colunas_necessarias:
+            if coluna not in df.columns:
+                df[coluna] = ""
+        
         # Garante que os campos importantes são strings
         df["Executante1"] = df["Executante1"].astype(str)
         df["Executante2"] = df["Executante2"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
         
-        df.to_csv(LOCAL_FILENAME, index=False)
+        df.to_csv(LOCAL_FILENAME, index=False, encoding='utf-8')
         fazer_backup()
         
         # Se configurado, envia para o GitHub
