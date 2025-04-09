@@ -26,7 +26,7 @@ except ImportError:
     st.warning("Funcionalidade do GitHub não disponível (PyGithub não instalado)")
 
 # Constantes
-LOCAL_FILENAME = "ordens_servico4.0.csv"  # Nome do arquivo atualizado
+LOCAL_FILENAME = "ordens_servico4.0.csv"
 BACKUP_DIR = "backups"
 MAX_BACKUPS = 10
 SENHA_SUPERVISAO = "king@2025"
@@ -582,14 +582,14 @@ def atualizar_os():
             # Executante 2 (opcional)
             executante2_atual = str(os_data["Executante2"]) if pd.notna(os_data["Executante2"]) else ""
             try:
-                index_executante2 = EXECUTANTES_PREDEFINIDOS.index(executante2_atual)
+                index_executante2 = EXECUTANTES_PREDEFINIDOS.index(executante2_atual) + 1
             except ValueError:
                 index_executante2 = 0
 
             executante2 = st.selectbox(
                 "Executante Secundário (opcional)",
                 [""] + EXECUTANTES_PREDEFINIDOS,
-                index=0 if executante2_atual == "" else EXECUTANTES_PREDEFINIDOS.index(executante2_atual) + 1
+                index=index_executante2
             )
 
             if novo_status != "Pendente":
@@ -618,7 +618,7 @@ def atualizar_os():
                 # Atualiza todos os campos relevantes
                 df.loc[df["ID"] == os_id, "Status"] = novo_status
                 df.loc[df["ID"] == os_id, "Executante1"] = executante1
-                df.loc[df["ID"] == os_id, "Executante2"] = executante2
+                df.loc[df["ID"] == os_id, "Executante2"] = executante2 if executante2 != "" else ""
                 df.loc[df["ID"] == os_id, "Tipo"] = tipo
                 
                 if novo_status == "Concluído":
