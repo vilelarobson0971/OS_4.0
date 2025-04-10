@@ -248,6 +248,41 @@ def salvar_csv(df):
         st.error(f"Erro ao salvar dados: {str(e)}")
         return False
 
+def calcular_lead_time(df):
+    """Calcula o lead time médio por tipo de manutenção em horas"""
+    # Filtra apenas as OSs concluídas
+    df_concluidas = df[df["Status"] == "Concluído"].copy()
+    
+    if df_concluidas.empty:
+        return None
+    
+    # Converte datas para datetime
+    try:
+        df_concluidas["Data_Hora_Abertura"] = pd.to_datetime(
+            df_concluidas["Data"] + " " + df_concluidas["Hora Abertura"],
+            format="%d/%m/%Y %H:%M"
+        )
+        
+        df_concluidas["Data_Hora_Conclusao"] = pd.to_datetime(
+            df_concluidas["Data Conclusão"] + " " + df_concluidas["Hora Conclusão"],
+            format="%d/%m/%Y %H:%M"
+        )
+        
+        # Calcula o lead time em horas
+        df_concluidas["Lead_Time_Horas"] = (
+            df_concluidas["Data_Hora_Conclusao"] - df_concluidas["Data_Hora_Abertura"]
+        ).dt.total_seconds() / 3600  # Converte para horas
+        
+        # Calcula a média por tipo de manutenção
+        lead_time_medio = df_concluidas.groupby("Tipo")["Lead_Time_Horas"].mean().reset_index()
+        lead_time_medio.columns = ["Tipo", "Lead_Time_Medio_Horas"]
+        
+        return lead_time_medio.round(2)  # Arredonda para 2 casas decimais
+    
+    except Exception as e:
+        st.error(f"Erro ao calcular lead time: {str(e)}")
+        return None
+
 # Funções de página
 def pagina_inicial():
     col1, col2 = st.columns([1, 15])
@@ -404,7 +439,7 @@ def dashboard():
         st.warning("Nenhuma OS cadastrada para análise.")
         return
 
-    tab1, tab2, tab3 = st.tabs(["🔧 Tipos", "👥 Executantes", "📈 Status"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🔧 Tipos", "👥 Executantes", "📈 Status", "⏱️ Lead Time"])
 
     with tab1:
         st.subheader("Distribuição por Tipo de Manutenção")
@@ -506,6 +541,44 @@ def dashboard():
             st.pyplot(fig)
         else:
             st.warning("Nenhum dado de status disponível")
+
+    with tab4:
+        st.subheader("Lead Time Médio por Tipo (horas)")
+        lead_time_df = calcular_lead_time(df)
+        
+        if lead_time_df is not None and not lead_time_df.empty:
+            # Ordena por lead time médio
+            lead_time_df = lead_time_df.sort_values("Lead_Time_Medio_Horas", ascending=False)
+            
+            fig, ax = plt.subplots(figsize=(4, 2))
+            bars = sns.barplot(
+                x="Lead_Time_Medio_Horas",
+                y="Tipo",
+                data=lead_time_df,
+                palette="coolwarm",
+                ax=ax
+            )
+            
+            ax.set_xlabel('Horas', fontsize=9)
+            ax.set_ylabel('Tipo', fontsize=9)
+            ax.set_title("Lead Time Médio por Tipo", fontsize=10)
+            
+            # Adiciona os valores nas barras
+            for bar in bars.patches:
+                width = bar.get_width()
+                ax.text(width + 0.5,
+                        bar.get_y() + bar.get_height()/2,
+                        f'{width:.1f}',
+                        va='center',
+                        ha='left',
+                        fontsize=8)
+            
+            st.pyplot(fig)
+            
+            # Mostra a tabela com os dados
+            st.dataframe(lead_time_df.set_index("Tipo"), use_container_width=True)
+        else:
+            st.warning("Nenhuma OS concluída disponível para cálculo de Lead Time")
 
 def pagina_supervisao():
     st.header("🔐 Área de Supervisão")
