@@ -313,12 +313,14 @@ def cadastrar_os():
             else:
                 df = carregar_csv()
                 novo_id = int(df["ID"].max()) + 1 if not df.empty and not pd.isna(df["ID"].max()) else 1
-                data_formatada = datetime.now().strftime("%d/%m/%Y")
-
+                # Obtém a data e hora atual em UTC e converte para o fuso horário do Brasil (UTC-3)
+                data_hora_utc = datetime.utcnow()
+                data_hora_brasil = data_hora_utc.strftime("%d/%m/%Y %H:%M")
+                
                 nova_os = pd.DataFrame([{
                     "ID": novo_id,
                     "Descrição": descricao,
-                    "Data": data_formatada,
+                    "Data": data_hora_brasil,
                     "Solicitante": solicitante,
                     "Local": local,
                     "Tipo": "",
