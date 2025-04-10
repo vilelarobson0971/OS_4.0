@@ -414,9 +414,9 @@ def dashboard():
         if not tipo_counts.empty:
             fig, ax = plt.subplots(figsize=(3, 2))
             
-            wedges, texts, autotexts = ax.pie(
+            wedges, _, _ = ax.pie(
                 tipo_counts.values,
-                labels=tipo_counts.index,
+                labels=None,  # Removido os rótulos
                 autopct='%1.1f%%',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
@@ -449,9 +449,9 @@ def dashboard():
         if not executante_counts.empty:
             fig, ax = plt.subplots(figsize=(3, 2))
             
-            wedges, texts, autotexts = ax.pie(
+            wedges, _, _ = ax.pie(
                 executante_counts.values,
-                labels=executante_counts.index,
+                labels=None,  # Removido os rótulos
                 autopct='%1.1f%%',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
@@ -483,9 +483,9 @@ def dashboard():
         if not status_counts.empty:
             fig, ax = plt.subplots(figsize=(3, 2))
             
-            wedges, texts, autotexts = ax.pie(
+            wedges, _, _ = ax.pie(
                 status_counts.values,
-                labels=status_counts.index,
+                labels=None,  # Removido os rótulos
                 autopct='%1.1f%%',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
@@ -519,9 +519,9 @@ def dashboard():
             
             fig, ax = plt.subplots(figsize=(3, 2))
             
-            wedges, texts, autotexts = ax.pie(
+            wedges, _, _ = ax.pie(
                 lead_time_df["Lead_Time_Medio_Horas"],
-                labels=lead_time_df["Tipo"],
+                labels=None,  # Removido os rótulos
                 autopct=lambda p: f'{p * sum(lead_time_df["Lead_Time_Medio_Horas"])/100:.1f}h',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
