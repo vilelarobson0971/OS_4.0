@@ -446,7 +446,7 @@ def dashboard():
         tipo_counts = df["Tipo"].value_counts()
         
         if not tipo_counts.empty:
-            fig, ax = plt.subplots(figsize=(8, 6))
+            fig, ax = plt.subplots(figsize=(3, 2))  # Tamanho reduzido
             
             # Gráfico de rosca
             wedges, texts, autotexts = ax.pie(
@@ -455,70 +455,56 @@ def dashboard():
                 autopct='%1.1f%%',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 12}
+                textprops={'fontsize': 8, 'color': 'black'}  # Texto preto e menor
             )
-            
-            # Ajusta o tamanho da fonte dos valores
-            for autotext in autotexts:
-                autotext.set_fontsize(12)
-                autotext.set_color('white')
             
             # Adiciona um círculo no meio para fazer o efeito rosca
             centre_circle = plt.Circle((0,0), 0.70, fc='white')
             ax.add_artist(centre_circle)
             
-            # Move a legenda para a direita
+            # Legenda no canto direito inferior
             ax.legend(
                 wedges,
                 tipo_counts.index,
                 title="Tipos",
-                loc="center left",
-                bbox_to_anchor=(1, 0, 0.5, 1)
+                loc="lower right",
+                bbox_to_anchor=(1.3, 0)
             )
             
-            ax.set_title("Distribuição por Tipo de Manutenção", fontsize=14)
+            ax.set_title("Distribuição por Tipo", fontsize=10)
             st.pyplot(fig)
         else:
             st.warning("Nenhum dado de tipo disponível")
 
     with tab2:
         st.subheader("OS por Executantes")
-        # Combina os dois executantes para análise
         executantes = pd.concat([df["Executante1"], df["Executante2"]])
         executante_counts = executantes[executantes != ""].value_counts()
         
         if not executante_counts.empty:
-            fig, ax = plt.subplots(figsize=(8, 6))
+            fig, ax = plt.subplots(figsize=(3, 2))
             
-            # Gráfico de rosca
             wedges, texts, autotexts = ax.pie(
                 executante_counts.values,
                 labels=executante_counts.index,
                 autopct='%1.1f%%',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 12}
+                textprops={'fontsize': 8, 'color': 'black'}
             )
             
-            # Ajusta o tamanho da fonte dos valores
-            for autotext in autotexts:
-                autotext.set_fontsize(12)
-                autotext.set_color('white')
-            
-            # Adiciona um círculo no meio para fazer o efeito rosca
             centre_circle = plt.Circle((0,0), 0.70, fc='white')
             ax.add_artist(centre_circle)
             
-            # Move a legenda para a direita
             ax.legend(
                 wedges,
                 executante_counts.index,
                 title="Executantes",
-                loc="center left",
-                bbox_to_anchor=(1, 0, 0.5, 1)
+                loc="lower right",
+                bbox_to_anchor=(1.3, 0)
             )
             
-            ax.set_title("OS por Executantes", fontsize=14)
+            ax.set_title("OS por Executantes", fontsize=10)
             st.pyplot(fig)
         else:
             st.warning("Nenhuma OS atribuída a executantes")
@@ -528,37 +514,29 @@ def dashboard():
         status_counts = df["Status"].value_counts()
         
         if not status_counts.empty:
-            fig, ax = plt.subplots(figsize=(8, 6))
+            fig, ax = plt.subplots(figsize=(3, 2))
             
-            # Gráfico de rosca
             wedges, texts, autotexts = ax.pie(
                 status_counts.values,
                 labels=status_counts.index,
                 autopct='%1.1f%%',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 12}
+                textprops={'fontsize': 8, 'color': 'black'}
             )
             
-            # Ajusta o tamanho da fonte dos valores
-            for autotext in autotexts:
-                autotext.set_fontsize(12)
-                autotext.set_color('white')
-            
-            # Adiciona um círculo no meio para fazer o efeito rosca
             centre_circle = plt.Circle((0,0), 0.70, fc='white')
             ax.add_artist(centre_circle)
             
-            # Move a legenda para a direita
             ax.legend(
                 wedges,
                 status_counts.index,
                 title="Status",
-                loc="center left",
-                bbox_to_anchor=(1, 0, 0.5, 1)
+                loc="lower right",
+                bbox_to_anchor=(1.3, 0)
             )
             
-            ax.set_title("Distribuição por Status", fontsize=14)
+            ax.set_title("Distribuição por Status", fontsize=10)
             st.pyplot(fig)
         else:
             st.warning("Nenhum dado de status disponível")
@@ -568,46 +546,36 @@ def dashboard():
         lead_time_df = calcular_lead_time(df)
         
         if lead_time_df is not None and not lead_time_df.empty:
-            # Ordena por lead time médio
             lead_time_df = lead_time_df.sort_values("Lead_Time_Medio_Horas", ascending=False)
             
-            fig, ax = plt.subplots(figsize=(8, 6))
+            fig, ax = plt.subplots(figsize=(3, 2))
             
-            # Gráfico de rosca
             wedges, texts, autotexts = ax.pie(
                 lead_time_df["Lead_Time_Medio_Horas"],
                 labels=lead_time_df["Tipo"],
                 autopct=lambda p: f'{p * sum(lead_time_df["Lead_Time_Medio_Horas"])/100:.1f}h',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 12}
+                textprops={'fontsize': 8, 'color': 'black'}
             )
             
-            # Ajusta o tamanho da fonte dos valores
-            for autotext in autotexts:
-                autotext.set_fontsize(12)
-                autotext.set_color('white')
-            
-            # Adiciona um círculo no meio para fazer o efeito rosca
             centre_circle = plt.Circle((0,0), 0.70, fc='white')
             ax.add_artist(centre_circle)
             
-            # Move a legenda para a direita
             ax.legend(
                 wedges,
                 lead_time_df["Tipo"],
                 title="Tipos",
-                loc="center left",
-                bbox_to_anchor=(1, 0, 0.5, 1)
+                loc="lower right",
+                bbox_to_anchor=(1.3, 0)
             )
             
-            ax.set_title("Lead Time Médio por Tipo (horas)", fontsize=14)
+            ax.set_title("Lead Time Médio (horas)", fontsize=10)
             st.pyplot(fig)
             
-            # Mostra a tabela com os dados
             st.dataframe(lead_time_df.set_index("Tipo"), use_container_width=True)
         else:
-            st.warning("Nenhuma OS concluída disponível para cálculo de Lead Time")
+            st.warning("Nenhuma OS concluída disponível")
 
 def pagina_supervisao():
     st.header("🔐 Área de Supervisão")
@@ -850,7 +818,7 @@ def configurar_github():
                 st.error("Preencha todos os campos para ativar a sincronização com GitHub")
 
 def main():
-    # Inicializa arquivos e verifica consistência
+        # Inicializa arquivos e verifica consistência
     inicializar_arquivos()
     
     # Menu principal
