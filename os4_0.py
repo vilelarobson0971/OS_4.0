@@ -607,33 +607,29 @@ def atualizar_os():
                 data_atual = data_hora_local.strftime("%d/%m/%Y")
                 hora_atual = data_hora_local.strftime("%H:%M")
                 
-                data_conclusao = st.text_input(
+                # Define automaticamente a data e hora de conclusão
+                data_conclusao = data_atual
+                hora_conclusao = hora_atual
+                
+                st.text_input(
                     "Data de conclusão",
-                    value=data_atual if pd.isna(os_data['Data Conclusão']) or os_data['Data Conclusão'] == "" else str(os_data['Data Conclusão'])
+                    value=data_atual,
+                    disabled=True
                 )
-                hora_conclusao = st.text_input(
+                st.text_input(
                     "Hora de conclusão",
-                    value=hora_atual if pd.isna(os_data['Hora Conclusão']) or os_data['Hora Conclusão'] == "" else str(os_data['Hora Conclusão'])
+                    value=hora_atual,
+                    disabled=True
                 )
             else:
-                data_conclusao = st.text_input(
-                    "Data de conclusão",
-                    value=str(os_data['Data Conclusão']) if pd.notna(os_data['Data Conclusão']) else "",
-                    disabled=True
-                )
-                hora_conclusao = st.text_input(
-                    "Hora de conclusão",
-                    value=str(os_data['Hora Conclusão']) if pd.notna(os_data['Hora Conclusão']) else "",
-                    disabled=True
-                )
+                data_conclusao = ""
+                hora_conclusao = ""
 
         submitted = st.form_submit_button("Atualizar OS")
 
         if submitted:
             if novo_status in ["Em execução", "Concluído"] and not executante1:
                 st.error("Selecione pelo menos um executante principal para este status!")
-            elif novo_status == "Concluído" and (not data_conclusao or not hora_conclusao):
-                st.error("Informe a data e hora de conclusão!")
             else:
                 # Atualiza todos os campos relevantes
                 df.loc[df["ID"] == os_id, "Status"] = novo_status
@@ -644,6 +640,9 @@ def atualizar_os():
                 if novo_status == "Concluído":
                     df.loc[df["ID"] == os_id, "Data Conclusão"] = data_conclusao
                     df.loc[df["ID"] == os_id, "Hora Conclusão"] = hora_conclusao
+                else:
+                    df.loc[df["ID"] == os_id, "Data Conclusão"] = ""
+                    df.loc[df["ID"] == os_id, "Hora Conclusão"] = ""
                 
                 if salvar_csv(df):
                     st.success("OS atualizada com sucesso! Backup automático realizado.")
