@@ -94,8 +94,8 @@ def inicializar_arquivos():
         if usar_github:
             baixar_do_github()
         else:
-            df = pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
-                                     "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"])
+            df = pd.DataFrame(columns=["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
+                                     "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2"])
             df.to_csv(LOCAL_FILENAME, index=False)
 
 def baixar_do_github():
@@ -188,8 +188,8 @@ def carregar_csv():
         df = converter_arquivo_antigo(df)
         
         # Garante que as colunas importantes existem
-        colunas_necessarias = ["ID", "Descrição", "Data", "Solicitante", "Local", 
-                             "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"]
+        colunas_necessarias = ["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
+                             "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2"]
         
         for coluna in colunas_necessarias:
             if coluna not in df.columns:
@@ -199,6 +199,7 @@ def carregar_csv():
         df["Executante1"] = df["Executante1"].astype(str)
         df["Executante2"] = df["Executante2"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
+        df["Hora Conclusão"] = df["Hora Conclusão"].astype(str)
         
         return df
     except Exception as e:
@@ -215,15 +216,15 @@ def carregar_csv():
                 st.error(f"Erro ao carregar backup: {str(e)}")
         
         # Retorna um DataFrame vazio com as colunas corretas
-        return pd.DataFrame(columns=["ID", "Descrição", "Data", "Solicitante", "Local", 
-                                   "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"])
+        return pd.DataFrame(columns=["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
+                                   "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2"])
 
 def salvar_csv(df):
     """Salva o DataFrame no arquivo CSV local e faz backup"""
     try:
         # Garante que todas as colunas necessárias existem
-        colunas_necessarias = ["ID", "Descrição", "Data", "Solicitante", "Local", 
-                             "Tipo", "Status", "Executante1", "Executante2", "Data Conclusão"]
+        colunas_necessarias = ["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
+                             "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2"]
         
         for coluna in colunas_necessarias:
             if coluna not in df.columns:
@@ -233,6 +234,7 @@ def salvar_csv(df):
         df["Executante1"] = df["Executante1"].astype(str)
         df["Executante2"] = df["Executante2"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
+        df["Hora Conclusão"] = df["Hora Conclusão"].astype(str)
         
         df.to_csv(LOCAL_FILENAME, index=False, encoding='utf-8')
         fazer_backup()
@@ -313,21 +315,24 @@ def cadastrar_os():
             else:
                 df = carregar_csv()
                 novo_id = int(df["ID"].max()) + 1 if not df.empty and not pd.isna(df["ID"].max()) else 1
-                # Obtém a data e hora atual em UTC e converte para o fuso horário do Brasil (UTC-3)
+                # Obtém a data e hora atual em UTC
                 data_hora_utc = datetime.utcnow()
-                data_hora_brasil = data_hora_utc.strftime("%d/%m/%Y %H:%M")
+                data_abertura = data_hora_utc.strftime("%d/%m/%Y")
+                hora_abertura = data_hora_utc.strftime("%H:%M")
                 
                 nova_os = pd.DataFrame([{
                     "ID": novo_id,
                     "Descrição": descricao,
-                    "Data": data_hora_brasil,
+                    "Data": data_abertura,
+                    "Hora Abertura": hora_abertura,
                     "Solicitante": solicitante,
                     "Local": local,
                     "Tipo": "",
                     "Status": "Pendente",
+                    "Data Conclusão": "",
+                    "Hora Conclusão": "",
                     "Executante1": "",
-                    "Executante2": "",
-                    "Data Conclusão": ""
+                    "Executante2": ""
                 }])
 
                 df = pd.concat([df, nova_os], ignore_index=True)
@@ -594,18 +599,26 @@ def atualizar_os():
                 index=index_executante2
             )
 
-            if novo_status != "Pendente":
-                data_atual = datetime.now().strftime("%d/%m/%Y")
+            if novo_status == "Concluído":
+                data_atual = datetime.utcnow().strftime("%d/%m/%Y")
+                hora_atual = datetime.utcnow().strftime("%H:%M")
                 data_conclusao = st.text_input(
-                    "Data de atualização",
-                    value=data_atual if pd.isna(os_data['Data Conclusão']) or os_data['Status'] == "Pendente" else str(
-                        os_data['Data Conclusão']),
-                    disabled=novo_status != "Concluído"
+                    "Data de conclusão",
+                    value=data_atual if pd.isna(os_data['Data Conclusão']) or os_data['Data Conclusão'] == "" else str(os_data['Data Conclusão'])
+                )
+                hora_conclusao = st.text_input(
+                    "Hora de conclusão",
+                    value=hora_atual if pd.isna(os_data['Hora Conclusão']) or os_data['Hora Conclusão'] == "" else str(os_data['Hora Conclusão'])
                 )
             else:
                 data_conclusao = st.text_input(
-                    "Data de conclusão (DD/MM/AAAA ou DDMMAAAA)",
+                    "Data de conclusão",
                     value=str(os_data['Data Conclusão']) if pd.notna(os_data['Data Conclusão']) else "",
+                    disabled=True
+                )
+                hora_conclusao = st.text_input(
+                    "Hora de conclusão",
+                    value=str(os_data['Hora Conclusão']) if pd.notna(os_data['Hora Conclusão']) else "",
                     disabled=True
                 )
 
@@ -614,8 +627,8 @@ def atualizar_os():
         if submitted:
             if novo_status in ["Em execução", "Concluído"] and not executante1:
                 st.error("Selecione pelo menos um executante principal para este status!")
-            elif novo_status == "Concluído" and not data_conclusao:
-                st.error("Informe a data de conclusão!")
+            elif novo_status == "Concluído" and (not data_conclusao or not hora_conclusao):
+                st.error("Informe a data e hora de conclusão!")
             else:
                 # Atualiza todos os campos relevantes
                 df.loc[df["ID"] == os_id, "Status"] = novo_status
@@ -625,6 +638,7 @@ def atualizar_os():
                 
                 if novo_status == "Concluído":
                     df.loc[df["ID"] == os_id, "Data Conclusão"] = data_conclusao
+                    df.loc[df["ID"] == os_id, "Hora Conclusão"] = hora_conclusao
                 
                 if salvar_csv(df):
                     st.success("OS atualizada com sucesso! Backup automático realizado.")
