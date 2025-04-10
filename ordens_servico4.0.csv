@@ -7,4 +7,4 @@ ID,Descrição,Data,Hora Abertura,Solicitante,Local,Tipo,Status,Data Conclusão,
 6,teset2a,09/04/2025,,robson,manut,,Pendente,nan,,nan,nan
 7,teste a,09/04/2025,,robson,manut,,Pendente,nan,,nan,nan
 8,teste b,09/04/2025,,robson,manut,Mecânica,Concluído,09/04/2025,,Robson,Guilherme
-9,teste 10-04,10/04/2025,,robson,manut,,Pendente,,,,
+9,teste 10-04,10/04/2025,,robson,manut,Instalação,Concluído,10/04/2025,,Robson,Guilherme
