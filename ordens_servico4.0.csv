@@ -1,5 +1,5 @@
 ID,Descrição,Data,Hora Abertura,Solicitante,Local,Tipo,Status,Data Conclusão,Hora Conclusão,Executante1,Executante2
-1,teste 1,10/04/2025,14:46,robson,manut,,Pendente,nan,nan,nan,nan
+1,teste 1,10/04/2025,14:46,robson,manut,Elétrica,Concluído,10/04/2025,14:46,Robson,Guilherme
 2,teste 2,10/04/2025,14:46,robson,manut,,Pendente,nan,nan,nan,nan
 3,teste 3,10/04/2025,14:46,robson,manut,,Pendente,nan,nan,nan,nan
-4,teste 4,10/04/2025,14:46,robson,manut,,Pendente,,,,
+4,teste 4,10/04/2025,14:46,robson,manut,,Pendente,nan,nan,nan,nan
