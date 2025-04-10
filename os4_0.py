@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import shutil
 import time
@@ -315,10 +315,11 @@ def cadastrar_os():
             else:
                 df = carregar_csv()
                 novo_id = int(df["ID"].max()) + 1 if not df.empty and not pd.isna(df["ID"].max()) else 1
-                # Obtém a data e hora atual em UTC
+                # Obtém a data e hora atual ajustada para o fuso horário do Brasil (UTC-3)
                 data_hora_utc = datetime.utcnow()
-                data_abertura = data_hora_utc.strftime("%d/%m/%Y")
-                hora_abertura = data_hora_utc.strftime("%H:%M")
+                data_hora_local = data_hora_utc - timedelta(hours=3)  # Ajuste para UTC-3
+                data_abertura = data_hora_local.strftime("%d/%m/%Y")
+                hora_abertura = data_hora_local.strftime("%H:%M")
                 
                 nova_os = pd.DataFrame([{
                     "ID": novo_id,
@@ -600,8 +601,12 @@ def atualizar_os():
             )
 
             if novo_status == "Concluído":
-                data_atual = datetime.utcnow().strftime("%d/%m/%Y")
-                hora_atual = datetime.utcnow().strftime("%H:%M")
+                # Ajusta para o fuso horário local (UTC-3)
+                data_hora_utc = datetime.utcnow()
+                data_hora_local = data_hora_utc - timedelta(hours=3)
+                data_atual = data_hora_local.strftime("%d/%m/%Y")
+                hora_atual = data_hora_local.strftime("%H:%M")
+                
                 data_conclusao = st.text_input(
                     "Data de conclusão",
                     value=data_atual if pd.isna(os_data['Data Conclusão']) or os_data['Data Conclusão'] == "" else str(os_data['Data Conclusão'])
