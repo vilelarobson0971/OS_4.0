@@ -4,4 +4,5 @@ ID,Descrição,Data,Hora Abertura,Solicitante,Local,Tipo,Status,Data Conclusão,
 3,teste 3,10/04/2025,14:46,robson,manut,Mecânica,Concluído,10/04/2025,15:43,Robson,Guilherme
 4,teste 4,10/04/2025,14:46,robson,manut,Refrigeração,Concluído,10/04/2025,15:44,Robson,Guilherme
 5,teste AA,10/04/2025,16:34,robson,manut,,Pendente,nan,nan,nan,nan
-6,teste BB,10/04/2025,16:34,robson,manut,,Pendente,,,,
+6,teste BB,10/04/2025,16:34,robson,manut,,Pendente,nan,nan,nan,nan
+7,teste CC,10/04/2025,16:35,robson,manut,,Pendente,,,,
