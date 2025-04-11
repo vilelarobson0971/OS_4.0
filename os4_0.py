@@ -89,7 +89,7 @@ def inicializar_arquivos():
             baixar_do_github()
         else:
             df = pd.DataFrame(columns=["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
-                                     "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2"])
+                                     "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente"])
             df.to_csv(LOCAL_FILENAME, index=False)
 
 def baixar_do_github():
@@ -173,7 +173,7 @@ def carregar_csv():
         df = converter_arquivo_antigo(df)
         
         colunas_necessarias = ["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
-                             "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2"]
+                             "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente"]
         
         for coluna in colunas_necessarias:
             if coluna not in df.columns:
@@ -183,6 +183,7 @@ def carregar_csv():
         df["Executante2"] = df["Executante2"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
         df["Hora Conclusão"] = df["Hora Conclusão"].astype(str)
+        df["Urgente"] = df["Urgente"].astype(str)
         
         return df
     except Exception as e:
@@ -198,13 +199,13 @@ def carregar_csv():
                 st.error(f"Erro ao carregar backup: {str(e)}")
         
         return pd.DataFrame(columns=["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
-                                   "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2"])
+                                   "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente"])
 
 def salvar_csv(df):
     """Salva o DataFrame no arquivo CSV local e faz backup"""
     try:
         colunas_necessarias = ["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
-                             "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2"]
+                             "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente"]
         
         for coluna in colunas_necessarias:
             if coluna not in df.columns:
@@ -214,6 +215,7 @@ def salvar_csv(df):
         df["Executante2"] = df["Executante2"].astype(str)
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
         df["Hora Conclusão"] = df["Hora Conclusão"].astype(str)
+        df["Urgente"] = df["Urgente"].astype(str)
         
         df.to_csv(LOCAL_FILENAME, index=False, encoding='utf-8')
         fazer_backup()
@@ -274,7 +276,10 @@ def pagina_inicial():
             
             if not st.session_state.get(notificacao_key, False):
                 with st.container():
-                    st.warning(f"⚠️ NOVA ORDEM DE SERVIÇO ABERTA: ID {ultima_os['ID']} - {ultima_os['Descrição']}")
+                    if ultima_os.get("Urgente", "") == "Sim":
+                        st.error(f"🚨 ORDEM DE SERVIÇO URGENTE: ID {ultima_os['ID']} - {ultima_os['Descrição']}")
+                    else:
+                        st.warning(f"⚠️ NOVA ORDEM DE SERVIÇO ABERTA: ID {ultima_os['ID']} - {ultima_os['Descrição']}")
                     if st.button("✅ Confirmar recebimento da notificação"):
                         st.session_state[notificacao_key] = True
                         st.experimental_rerun()
@@ -309,6 +314,7 @@ def cadastrar_os():
         descricao = st.text_area("Descrição da atividade*")
         solicitante = st.text_input("Solicitante*")
         local = st.text_input("Local*")
+        urgente = st.checkbox("Urgente")
 
         submitted = st.form_submit_button("Cadastrar OS")
         if submitted:
@@ -334,7 +340,8 @@ def cadastrar_os():
                     "Data Conclusão": "",
                     "Hora Conclusão": "",
                     "Executante1": "",
-                    "Executante2": ""
+                    "Executante2": "",
+                    "Urgente": "Sim" if urgente else "Não"
                 }])
 
                 df = pd.concat([df, nova_os], ignore_index=True)
