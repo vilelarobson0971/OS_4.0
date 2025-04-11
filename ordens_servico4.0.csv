@@ -1,9 +1,10 @@
 ID,Descrição,Data,Hora Abertura,Solicitante,Local,Tipo,Status,Data Conclusão,Hora Conclusão,Executante1,Executante2,Urgente
-1,teste 1,10/04/2025,14:46,robson,manut,Elétrica,Concluído,10/04/2025,14:46,Robson,Guilherme,
-2,teste 2,10/04/2025,14:46,robson,manut,Elétrica,Concluído,10/04/2025,14:48,Robson,Guilherme,
-3,teste 3,10/04/2025,14:46,robson,manut,Mecânica,Concluído,10/04/2025,15:43,Robson,Guilherme,
-4,teste 4,10/04/2025,14:46,robson,manut,Refrigeração,Concluído,10/04/2025,15:44,Robson,Guilherme,
-5,teste AA,10/04/2025,16:34,robson,manut,,Pendente,nan,nan,nan,nan,
-6,teste BB,10/04/2025,16:34,robson,manut,,Pendente,nan,nan,nan,nan,
-7,teste CC,10/04/2025,16:35,robson,manut,,Pendente,nan,nan,nan,nan,
-8,teste urgente 1,11/04/2025,10:09,robson,manut,,Pendente,,,,,Sim
+1,teste 1,10/04/2025,14:46,robson,manut,Elétrica,Concluído,10/04/2025,14:46,Robson,Guilherme,nan
+2,teste 2,10/04/2025,14:46,robson,manut,Elétrica,Concluído,10/04/2025,14:48,Robson,Guilherme,nan
+3,teste 3,10/04/2025,14:46,robson,manut,Mecânica,Concluído,10/04/2025,15:43,Robson,Guilherme,nan
+4,teste 4,10/04/2025,14:46,robson,manut,Refrigeração,Concluído,10/04/2025,15:44,Robson,Guilherme,nan
+5,teste AA,10/04/2025,16:34,robson,manut,,Pendente,nan,nan,nan,nan,nan
+6,teste BB,10/04/2025,16:34,robson,manut,,Pendente,nan,nan,nan,nan,nan
+7,teste CC,10/04/2025,16:35,robson,manut,,Pendente,nan,nan,nan,nan,nan
+8,teste urgente 1,11/04/2025,10:09,robson,manut,,Pendente,nan,nan,nan,nan,Sim
+9,teste urgente 2,11/04/2025,10:09,robson,manut,,Pendente,,,,,Não
