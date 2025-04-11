@@ -8,4 +8,5 @@ ID,Descrição,Data,Hora Abertura,Solicitante,Local,Tipo,Status,Data Conclusão,
 7,teste CC,10/04/2025,16:35,robson,manut,,Pendente,nan,nan,nan,nan,nan
 8,teste urgente 1,11/04/2025,10:09,robson,manut,,Pendente,nan,nan,nan,nan,Sim
 9,teste urgente 2,11/04/2025,10:09,robson,manut,,Pendente,nan,nan,nan,nan,Não
-10,teste urgente 3,11/04/2025,10:09,robson,manut,,Pendente,,,,,Sim
+10,teste urgente 3,11/04/2025,10:09,robson,manut,,Pendente,nan,nan,nan,nan,Sim
+11,teste urgente 4,11/04/2025,10:21,robson,manut,,Pendente,,,,,Não
