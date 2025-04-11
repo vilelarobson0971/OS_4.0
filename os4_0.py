@@ -425,13 +425,13 @@ def dashboard():
         if not tipo_counts.empty:
             fig, ax = plt.subplots(figsize=(3, 2))
             
-            wedges, _, _ = ax.pie(
+            wedges, texts, autotexts = ax.pie(
                 tipo_counts.values,
-                labels=None,  # Removido os rótulos
+                labels=None,
                 autopct='%1.1f%%',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 8, 'color': 'black'}
+                textprops={'fontsize': 4, 'color': 'black'}  # Reduzindo o tamanho da fonte em 200%
             )
             
             centre_circle = plt.Circle((0,0), 0.70, fc='white')
@@ -455,18 +455,20 @@ def dashboard():
     with tab2:
         st.subheader("OS por Executantes")
         executantes = pd.concat([df["Executante1"], df["Executante2"]])
-        executante_counts = executantes[executantes != ""].value_counts()
+        # Filtrar valores vazios e 'nan'
+        executantes = executantes[~executantes.isin(['', 'nan'])]
+        executante_counts = executantes.value_counts()
         
         if not executante_counts.empty:
             fig, ax = plt.subplots(figsize=(3, 2))
             
-            wedges, _, _ = ax.pie(
+            wedges, texts, autotexts = ax.pie(
                 executante_counts.values,
-                labels=None,  # Removido os rótulos
+                labels=None,
                 autopct='%1.1f%%',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 8, 'color': 'black'}
+                textprops={'fontsize': 4, 'color': 'black'}  # Reduzindo o tamanho da fonte em 200%
             )
             
             centre_circle = plt.Circle((0,0), 0.70, fc='white')
@@ -494,29 +496,23 @@ def dashboard():
         if not status_counts.empty:
             fig, ax = plt.subplots(figsize=(3, 2))
             
-            wedges, _, _ = ax.pie(
-                status_counts.values,
-                labels=None,  # Removido os rótulos
-                autopct='%1.1f%%',
-                startangle=90,
-                wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 8, 'color': 'black'}
-            )
-            
-            centre_circle = plt.Circle((0,0), 0.70, fc='white')
-            ax.add_artist(centre_circle)
-            
-            ax.legend(
-                wedges,
+            # Alterado para gráfico de barras verticais
+            bars = ax.bar(
                 status_counts.index,
-                title="Status",
-                loc="lower right",
-                bbox_to_anchor=(1.5, 0),
-                prop={'size': 6},
-                title_fontsize='8'
+                status_counts.values,
+                color=sns.color_palette("pastel")
             )
+            
+            # Adicionando os valores nas barras com fonte menor
+            for bar in bars:
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                        f'{height}',
+                        ha='center', va='bottom',
+                        fontsize=4)  # Reduzindo o tamanho da fonte em 200%
             
             ax.set_title("Distribuição por Status", fontsize=10)
+            plt.xticks(rotation=45, fontsize=6)
             st.pyplot(fig, bbox_inches='tight')
         else:
             st.warning("Nenhum dado de status disponível")
@@ -530,13 +526,13 @@ def dashboard():
             
             fig, ax = plt.subplots(figsize=(3, 2))
             
-            wedges, _, _ = ax.pie(
+            wedges, texts, autotexts = ax.pie(
                 lead_time_df["Lead_Time_Medio_Horas"],
-                labels=None,  # Removido os rótulos
+                labels=None,
                 autopct=lambda p: f'{p * sum(lead_time_df["Lead_Time_Medio_Horas"])/100:.1f}h',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 8, 'color': 'black'}
+                textprops={'fontsize': 4, 'color': 'black'}  # Reduzindo o tamanho da fonte em 200%
             )
             
             centre_circle = plt.Circle((0,0), 0.70, fc='white')
