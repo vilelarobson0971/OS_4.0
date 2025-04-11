@@ -10,6 +10,12 @@ import glob
 import base64
 import json
 
+def carregar_imagem(caminho_arquivo):
+    with open(caminho_arquivo, "rb") as f:
+        dados = f.read()
+        encoded = base64.b64encode(dados).decode()
+    return f"data:image/png;base64,{encoded}"
+    
 # Configurações da página
 st.set_page_config(
     page_title="Sistema de Ordens de Serviço",
@@ -263,13 +269,20 @@ def calcular_lead_time(df):
         return None
 
 def pagina_inicial():
+    # Carrega a imagem
+    logo = carregar_imagem("logo.png")
+    
     col1, col2 = st.columns([1, 15])
     with col1:
-        st.markdown('<div style="font-size: 2.5em; margin-top: 10px;">🔧</div>', unsafe_allow_html=True)
+        # Substitui o emoji pela imagem
+        st.markdown(f'<div style="margin-top: 10px;"><img src="{logo}" width="60"></div>', 
+                   unsafe_allow_html=True)
     with col2:
-        st.markdown("<h1 style='font-size: 2.5em;'>SISTEMA DE GESTÃO DE ORDENS DE SERVIÇO</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='font-size: 2.5em;'>SISTEMA DE GESTÃO DE ORDENS DE SERVIÇO</h1>", 
+                   unsafe_allow_html=True)
 
-    st.markdown("<p style='text-align: center; font-size: 1.2em;'>King & Joe</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 1.2em;'>King & Joe</p>", 
+               unsafe_allow_html=True)
     st.markdown("---")
 
     df = carregar_csv()
