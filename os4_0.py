@@ -74,7 +74,10 @@ def converter_arquivo_antigo(df):
     if 'Executante' in df.columns and 'Executante1' not in df.columns:
         df['Executante1'] = df['Executante']
         df['Executante2'] = ""
+        df['Observações'] = ""  # Adiciona coluna de observações se não existir
         df.drop('Executante', axis=1, inplace=True)
+    if 'Observações' not in df.columns:  # Garante que a coluna existe
+        df['Observações'] = ""
     return df
 
 def inicializar_arquivos():
@@ -89,7 +92,7 @@ def inicializar_arquivos():
             baixar_do_github()
         else:
             df = pd.DataFrame(columns=["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
-                                     "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente"])
+                                     "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente", "Observações"])
             df.to_csv(LOCAL_FILENAME, index=False)
 
 def baixar_do_github():
@@ -173,7 +176,7 @@ def carregar_csv():
         df = converter_arquivo_antigo(df)
         
         colunas_necessarias = ["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
-                             "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente"]
+                             "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente", "Observações"]
         
         for coluna in colunas_necessarias:
             if coluna not in df.columns:
@@ -184,6 +187,7 @@ def carregar_csv():
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
         df["Hora Conclusão"] = df["Hora Conclusão"].astype(str)
         df["Urgente"] = df["Urgente"].astype(str)
+        df["Observações"] = df["Observações"].astype(str)
         
         return df
     except Exception as e:
@@ -199,13 +203,13 @@ def carregar_csv():
                 st.error(f"Erro ao carregar backup: {str(e)}")
         
         return pd.DataFrame(columns=["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
-                                   "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente"])
+                                   "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente", "Observações"])
 
 def salvar_csv(df):
     """Salva o DataFrame no arquivo CSV local e faz backup"""
     try:
         colunas_necessarias = ["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
-                             "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente"]
+                             "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente", "Observações"]
         
         for coluna in colunas_necessarias:
             if coluna not in df.columns:
@@ -216,6 +220,7 @@ def salvar_csv(df):
         df["Data Conclusão"] = df["Data Conclusão"].astype(str)
         df["Hora Conclusão"] = df["Hora Conclusão"].astype(str)
         df["Urgente"] = df["Urgente"].astype(str)
+        df["Observações"] = df["Observações"].astype(str)
         
         df.to_csv(LOCAL_FILENAME, index=False, encoding='utf-8')
         fazer_backup()
@@ -339,7 +344,8 @@ def cadastrar_os():
                     "Hora Conclusão": "",
                     "Executante1": "",
                     "Executante2": "",
-                    "Urgente": "Sim" if urgente else "Não"
+                    "Urgente": "Sim" if urgente else "Não",
+                    "Observações": ""
                 }])
 
                 df = pd.concat([df, nova_os], ignore_index=True)
@@ -381,7 +387,7 @@ def buscar_os():
         col1, col2 = st.columns([1, 3])
         with col1:
             criterio = st.radio("Critério de busca:",
-                              ["Status", "ID", "Solicitante", "Local", "Tipo", "Executante1", "Executante2"])
+                              ["Status", "ID", "Solicitante", "Local", "Tipo", "Executante1", "Executante2", "Observações"])
         with col2:
             if criterio == "ID":
                 busca = st.number_input("Digite o ID da OS", min_value=1)
@@ -663,6 +669,9 @@ def atualizar_os():
                 data_conclusao = ""
                 hora_conclusao = ""
 
+        # Nova caixa de texto para observações
+        observacoes = st.text_area("Observações", value=os_data.get("Observações", ""))
+
         submitted = st.form_submit_button("Atualizar OS")
 
         if submitted:
@@ -673,6 +682,7 @@ def atualizar_os():
                 df.loc[df["ID"] == os_id, "Executante1"] = executante1
                 df.loc[df["ID"] == os_id, "Executante2"] = executante2 if executante2 != "" else ""
                 df.loc[df["ID"] == os_id, "Tipo"] = tipo
+                df.loc[df["ID"] == os_id, "Observações"] = observacoes
                 
                 if novo_status == "Concluído":
                     df.loc[df["ID"] == os_id, "Data Conclusão"] = data_conclusao
