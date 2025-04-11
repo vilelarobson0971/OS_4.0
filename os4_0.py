@@ -271,19 +271,22 @@ def pagina_inicial():
     if not df.empty:
         novas_os = df[df["Status"] == "Pendente"]
         if not novas_os.empty:
-            ultima_os = novas_os.iloc[-1]
-            notificacao_key = f"notificacao_vista_{ultima_os['ID']}"
+            # Pegar as últimas 3 OS (ou menos se não houver 3)
+            ultimas_os = novas_os.tail(3).iloc[::-1]  # Inverte para mostrar a mais recente primeiro
             
-            if not st.session_state.get(notificacao_key, False):
-                with st.container():
-                    if ultima_os.get("Urgente", "") == "Sim":
-                        st.error(f"🚨 ORDEM DE SERVIÇO URGENTE: ID {ultima_os['ID']} - {ultima_os['Descrição']}")
-                    else:
-                        st.warning(f"⚠️ NOVA ORDEM DE SERVIÇO ABERTA: ID {ultima_os['ID']} - {ultima_os['Descrição']}")
-                    if st.button("✅ Confirmar recebimento da notificação"):
-                        st.session_state[notificacao_key] = True
-                        st.experimental_rerun()
-                st.markdown("---")
+            for _, os_data in ultimas_os.iterrows():
+                notificacao_key = f"notificacao_vista_{os_data['ID']}"
+                
+                if not st.session_state.get(notificacao_key, False):
+                    with st.container():
+                        if os_data.get("Urgente", "") == "Sim":
+                            st.error(f"🚨 ORDEM DE SERVIÇO URGENTE: ID {os_data['ID']} - {os_data['Descrição']}")
+                        else:
+                            st.warning(f"⚠️ NOVA ORDEM DE SERVIÇO ABERTA: ID {os_data['ID']} - {os_data['Descrição']}")
+                        if st.button(f"✅ Confirmar recebimento da OS {os_data['ID']}"):
+                            st.session_state[notificacao_key] = True
+                            st.experimental_rerun()
+                    st.markdown("---")
 
     st.markdown("""
     ### Bem-vindo ao Sistema de Gestão de Ordens de Serviço
