@@ -1,4 +1,4 @@
-"ID","Descrição","Data","","Solicitante","Local","Tipo","Status","Data Conclusão","Hora Conclusão","Executante1","Executante2","Urgente","Observações"
+"ID","Descrição","Data","Hora Abertura","Solicitante","Local","Tipo","Status","Data Conclusão","Hora Conclusão","Executante1","Executante2","Urgente","Observações"
 "1","Limpeza/Organização de áreas comuns e pátio","03/06/24","","Renato Zancheti","Matriz","Civil","Concluído","28/06/24","","Paulinho","","",""
 "2","Orçar Cabine coletora de pó","03/06/24","","Renato Silva","Filial","Instalação","Concluído","05/08/24","","Robson","","",""
 "3","Reparar prateleiras quebradas corredor B","04/06/24","","David","Estoque","Mecânica","Concluído","06/06/24","","Paulinho","","",""
