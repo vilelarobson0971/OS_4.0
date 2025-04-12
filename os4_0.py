@@ -451,7 +451,31 @@ def dashboard():
 
     with tab2:
         st.subheader("OS por Executantes")
-        executantes = pd.concat([df["Executante1"], df["Executante2"]])
+        
+        # Adicionando filtro por período
+        col1, col2 = st.columns(2)
+        with col1:
+            periodo = st.selectbox("Período", ["Todos", "Por Mês/Ano"])
+        
+        df_filtrado = df.copy()
+        
+        if periodo == "Por Mês/Ano":
+            with col2:
+                # Extrair meses e anos disponíveis
+                df['Data'] = pd.to_datetime(df['Data'], dayfirst=True, errors='coerce')
+                meses_disponiveis = df['Data'].dt.month.dropna().unique()
+                anos_disponiveis = df['Data'].dt.year.dropna().unique()
+                
+                mes_selecionado = st.selectbox("Mês", sorted(meses_disponiveis))
+                ano_selecionado = st.selectbox("Ano", sorted(anos_disponiveis))
+                
+                # Filtrar os dados
+                df_filtrado = df[
+                    (df['Data'].dt.month == mes_selecionado) & 
+                    (df['Data'].dt.year == ano_selecionado)
+                ]
+        
+        executantes = pd.concat([df_filtrado["Executante1"], df_filtrado["Executante2"]])
         # Filtrar valores vazios e 'nan'
         executantes = executantes[~executantes.isin(['', 'nan'])]
         executante_counts = executantes.value_counts()
