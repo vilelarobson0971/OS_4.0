@@ -246,16 +246,38 @@ def calcular_lead_time(df):
         return None
     
     try:
+        # Filtrar linhas onde Data e Hora Abertura são válidas
+        df_concluidas = df_concluidas[
+            (df_concluidas["Data"].notna()) & 
+            (df_concluidas["Hora Abertura"].notna()) &
+            (df_concluidas["Data Conclusão"].notna()) &
+            (df_concluidas["Hora Conclusão"].notna()) &
+            (df_concluidas["Hora Abertura"] != "nan") &
+            (df_concluidas["Hora Conclusão"] != "nan")
+        ].copy()
+        
+        if df_concluidas.empty:
+            return None
+            
+        # Converter para datetime
         df_concluidas["Data_Hora_Abertura"] = pd.to_datetime(
             df_concluidas["Data"] + " " + df_concluidas["Hora Abertura"],
-            format="%d/%m/%Y %H:%M"
+            format="%d/%m/%y %H:%M",
+            errors='coerce'
         )
         
         df_concluidas["Data_Hora_Conclusao"] = pd.to_datetime(
             df_concluidas["Data Conclusão"] + " " + df_concluidas["Hora Conclusão"],
-            format="%d/%m/%Y %H:%M"
+            format="%d/%m/%y %H:%M",
+            errors='coerce'
         )
         
+        # Remover linhas com conversão inválida
+        df_concluidas = df_concluidas.dropna(subset=["Data_Hora_Abertura", "Data_Hora_Conclusao"])
+        
+        if df_concluidas.empty:
+            return None
+            
         df_concluidas["Lead_Time_Horas"] = (
             df_concluidas["Data_Hora_Conclusao"] - df_concluidas["Data_Hora_Abertura"]
         ).dt.total_seconds() / 3600
