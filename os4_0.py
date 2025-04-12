@@ -440,8 +440,8 @@ def dashboard():
                 title="Tipos",
                 loc="lower right",
                 bbox_to_anchor=(1.5, 0),
-                prop={'size': 4},  # Reduzido em 200%
-                title_fontsize='6'  # Reduzido em 200%
+                prop={'size': 4},
+                title_fontsize='6'
             )
             
             ax.set_title("Distribuição por Tipo", fontsize=10)
@@ -461,13 +461,15 @@ def dashboard():
         
         if periodo == "Por Mês/Ano":
             with col2:
-                # Extrair meses e anos disponíveis
+                # Converter a coluna Data para datetime
                 df['Data'] = pd.to_datetime(df['Data'], dayfirst=True, errors='coerce')
-                meses_disponiveis = df['Data'].dt.month.dropna().unique()
-                anos_disponiveis = df['Data'].dt.year.dropna().unique()
                 
-                mes_selecionado = st.selectbox("Mês", sorted(meses_disponiveis))
-                ano_selecionado = st.selectbox("Ano", sorted(anos_disponiveis))
+                # Criar listas de meses e anos disponíveis
+                meses = list(range(1, 13))
+                anos = list(range(2020, 2031))  # De 2020 até 2030
+                
+                mes_selecionado = st.selectbox("Mês", meses, format_func=lambda x: f"{x:02d}")
+                ano_selecionado = st.selectbox("Ano", anos)
                 
                 # Filtrar os dados
                 df_filtrado = df[
@@ -501,8 +503,8 @@ def dashboard():
                 title="Executantes",
                 loc="lower right",
                 bbox_to_anchor=(1.5, 0),
-                prop={'size': 4},  # Reduzido em 200%
-                title_fontsize='6'  # Reduzido em 200%
+                prop={'size': 4},
+                title_fontsize='6'
             )
             
             ax.set_title("OS por Executantes", fontsize=10)
@@ -517,20 +519,18 @@ def dashboard():
         if not status_counts.empty:
             fig, ax = plt.subplots(figsize=(3, 2))
             
-            # Alterado para gráfico de barras verticais
             bars = ax.bar(
                 status_counts.index,
                 status_counts.values,
                 color=sns.color_palette("pastel")
             )
             
-            # Adicionando os valores nas barras com fonte menor
             for bar in bars:
                 height = bar.get_height()
                 ax.text(bar.get_x() + bar.get_width()/2., height,
                         f'{height}',
                         ha='center', va='bottom',
-                        fontsize=4)  # Reduzindo o tamanho da fonte em 200%
+                        fontsize=4)
             
             ax.set_title("Distribuição por Status", fontsize=10)
             plt.xticks(rotation=45, fontsize=6)
@@ -648,7 +648,6 @@ def atualizar_os():
                 data_conclusao = ""
                 hora_conclusao = ""
 
-        # Nova caixa de texto para observações
         observacoes = st.text_area("Observações", value=os_data.get("Observações", ""))
 
         submitted = st.form_submit_button("Atualizar OS")
@@ -771,7 +770,6 @@ def configurar_github():
                 st.error("Preencha todos os campos para ativar a sincronização com GitHub")
 
 def main():
-    # Inicializa o estado da sessão para notificações se não existir
     if 'notificacoes_limpas' not in st.session_state:
         st.session_state.notificacoes_limpas = False
         
