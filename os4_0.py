@@ -461,8 +461,11 @@ def dashboard():
         
         if periodo == "Por Mês/Ano":
             with col2:
-                # Converter a coluna Data para datetime
-                df['Data'] = pd.to_datetime(df['Data'], dayfirst=True, errors='coerce')
+                # Converter a coluna Data Conclusão para datetime
+                df_filtrado['Data Conclusão'] = pd.to_datetime(df_filtrado['Data Conclusão'], dayfirst=True, errors='coerce')
+                
+                # Filtrar apenas OS concluídas
+                df_filtrado = df_filtrado[df_filtrado['Status'] == 'Concluído']
                 
                 # Criar listas de meses e anos disponíveis
                 meses = list(range(1, 13))
@@ -471,18 +474,22 @@ def dashboard():
                 mes_selecionado = st.selectbox("Mês", meses, format_func=lambda x: f"{x:02d}")
                 ano_selecionado = st.selectbox("Ano", anos)
                 
-                # Filtrar os dados
-                df_filtrado = df[
-                    (df['Data'].dt.month == mes_selecionado) & 
-                    (df['Data'].dt.year == ano_selecionado)
+                # Filtrar os dados pela data de conclusão
+                df_filtrado = df_filtrado[
+                    (df_filtrado['Data Conclusão'].dt.month == mes_selecionado) & 
+                    (df_filtrado['Data Conclusão'].dt.year == ano_selecionado)
                 ]
+        else:
+            # Filtrar apenas OS concluídas quando selecionado "Todos"
+            df_filtrado = df_filtrado[df_filtrado['Status'] == 'Concluído']
         
+        # Concatenar executantes e filtrar valores inválidos
         executantes = pd.concat([df_filtrado["Executante1"], df_filtrado["Executante2"]])
-        # Filtrar valores vazios e 'nan'
         executantes = executantes[~executantes.isin(['', 'nan'])]
-        executante_counts = executantes.value_counts()
         
-        if not executante_counts.empty:
+        if not executantes.empty:
+            executante_counts = executantes.value_counts()
+            
             fig, ax = plt.subplots(figsize=(3, 2))
             
             wedges, texts, autotexts = ax.pie(
@@ -510,7 +517,7 @@ def dashboard():
             ax.set_title("OS por Executantes", fontsize=10)
             st.pyplot(fig, bbox_inches='tight')
         else:
-            st.warning("Nenhuma OS atribuída a executantes")
+            st.warning("Nenhuma OS concluída encontrada para o período selecionado")
 
     with tab3:
         st.subheader("Distribuição por Status")
