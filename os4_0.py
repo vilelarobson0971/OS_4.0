@@ -238,91 +238,6 @@ def salvar_csv(df):
         st.error(f"Erro ao salvar dados: {str(e)}")
         return False
 
-def calcular_lead_time(df):
-    """Calcula o lead time médio por tipo de manutenção em horas"""
-    df_concluidas = df[df["Status"] == "Concluído"].copy()
-    
-    if df_concluidas.empty:
-        return None
-    
-    try:
-        # Filtrar linhas onde Data e Hora Abertura são válidas
-        df_concluidas = df_concluidas[
-            (df_concluidas["Data"].notna()) & 
-            (df_concluidas["Hora Abertura"].notna()) &
-            (df_concluidas["Data Conclusão"].notna()) &
-            (df_concluidas["Hora Conclusão"].notna()) &
-            (df_concluidas["Hora Abertura"] != "nan") &
-            (df_concluidas["Hora Conclusão"] != "nan") &
-            (df_concluidas["Data"] != "") &  # Adicionado
-            (df_concluidas["Data Conclusão"] != "")  # Adicionado
-        ].copy()
-        
-        if df_concluidas.empty:
-            return None
-            
-        # Converter para datetime
-        df_concluidas["Data_Hora_Abertura"] = pd.to_datetime(
-            df_concluidas["Data"] + " " + df_concluidas["Hora Abertura"],
-            format="%d/%m/%y %H:%M",
-            errors='coerce'
-        )
-        
-        df_concluidas["Data_Hora_Conclusao"] = pd.to_datetime(
-            df_concluidas["Data Conclusão"] + " " + df_concluidas["Hora Conclusão"],
-            format="%d/%m/%y %H:%M",
-            errors='coerce'
-        )
-        
-        # Remover linhas com conversão inválida
-        df_concluidas = df_concluidas.dropna(subset=["Data_Hora_Abertura", "Data_Hora_Conclusao"])
-        
-        if df_concluidas.empty:
-            return None
-            
-        df_concluidas["Lead_Time_Horas"] = (
-            df_concluidas["Data_Hora_Conclusao"] - df_concluidas["Data_Hora_Abertura"]
-        ).dt.total_seconds() / 3600
-        
-        lead_time_medio = df_concluidas.groupby("Tipo")["Lead_Time_Horas"].mean().reset_index()
-        lead_time_medio.columns = ["Tipo", "Lead_Time_Medio_Horas"]
-        
-        return lead_time_medio.round(2)
-    except Exception as e:
-        st.error(f"Erro ao calcular lead time: {str(e)}")
-        return None
-            
-        # Converter para datetime
-        df_concluidas["Data_Hora_Abertura"] = pd.to_datetime(
-            df_concluidas["Data"] + " " + df_concluidas["Hora Abertura"],
-            format="%d/%m/%y %H:%M",
-            errors='coerce'
-        )
-        
-        df_concluidas["Data_Hora_Conclusao"] = pd.to_datetime(
-            df_concluidas["Data Conclusão"] + " " + df_concluidas["Hora Conclusão"],
-            format="%d/%m/%y %H:%M",
-            errors='coerce'
-        )
-        
-        # Remover linhas com conversão inválida
-        df_concluidas = df_concluidas.dropna(subset=["Data_Hora_Abertura", "Data_Hora_Conclusao"])
-        
-        if df_concluidas.empty:
-            return None
-            
-        df_concluidas["Lead_Time_Horas"] = (
-            df_concluidas["Data_Hora_Conclusao"] - df_concluidas["Data_Hora_Abertura"]
-        ).dt.total_seconds() / 3600
-        
-        lead_time_medio = df_concluidas.groupby("Tipo")["Lead_Time_Horas"].mean().reset_index()
-        lead_time_medio.columns = ["Tipo", "Lead_Time_Medio_Horas"]
-        
-        return lead_time_medio.round(2)
-    except Exception as e:
-        st.error(f"Erro ao calcular lead time: {str(e)}")
-        return None
-
 def pagina_inicial():
     # Carrega a imagem
     logo = carregar_imagem("logo.png")
@@ -484,7 +399,7 @@ def dashboard():
         st.warning("Nenhuma OS cadastrada para análise.")
         return
 
-    tab1, tab2, tab3, tab4 = st.tabs(["🔧 Tipos", "👥 Executantes", "📈 Status", "⏱️ Lead Time"])
+    tab1, tab2, tab3 = st.tabs(["🔧 Tipos", "👥 Executantes", "📈 Status"])
 
     with tab1:
         st.subheader("Distribuição por Tipo de Manutenção")
@@ -499,7 +414,7 @@ def dashboard():
                 autopct='%1.1f%%',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 4, 'color': 'black'}  # Reduzindo o tamanho da fonte em 200%
+                textprops={'fontsize': 4, 'color': 'black'}
             )
             
             centre_circle = plt.Circle((0,0), 0.70, fc='white')
@@ -511,8 +426,8 @@ def dashboard():
                 title="Tipos",
                 loc="lower right",
                 bbox_to_anchor=(1.5, 0),
-                prop={'size': 6},
-                title_fontsize='8'
+                prop={'size': 4},  # Reduzido em 200%
+                title_fontsize='6'  # Reduzido em 200%
             )
             
             ax.set_title("Distribuição por Tipo", fontsize=10)
@@ -536,7 +451,7 @@ def dashboard():
                 autopct='%1.1f%%',
                 startangle=90,
                 wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 4, 'color': 'black'}  # Reduzindo o tamanho da fonte em 200%
+                textprops={'fontsize': 4, 'color': 'black'}
             )
             
             centre_circle = plt.Circle((0,0), 0.70, fc='white')
@@ -548,8 +463,8 @@ def dashboard():
                 title="Executantes",
                 loc="lower right",
                 bbox_to_anchor=(1.5, 0),
-                prop={'size': 6},
-                title_fontsize='8'
+                prop={'size': 4},  # Reduzido em 200%
+                title_fontsize='6'  # Reduzido em 200%
             )
             
             ax.set_title("OS por Executantes", fontsize=10)
@@ -584,44 +499,6 @@ def dashboard():
             st.pyplot(fig, bbox_inches='tight')
         else:
             st.warning("Nenhum dado de status disponível")
-
-    with tab4:
-        st.subheader("Lead Time Médio por Tipo (horas)")
-        lead_time_df = calcular_lead_time(df)
-        
-        if lead_time_df is not None and not lead_time_df.empty:
-            lead_time_df = lead_time_df.sort_values("Lead_Time_Medio_Horas", ascending=False)
-            
-            fig, ax = plt.subplots(figsize=(3, 2))
-            
-            wedges, texts, autotexts = ax.pie(
-                lead_time_df["Lead_Time_Medio_Horas"],
-                labels=None,
-                autopct=lambda p: f'{p * sum(lead_time_df["Lead_Time_Medio_Horas"])/100:.1f}h',
-                startangle=90,
-                wedgeprops=dict(width=0.4),
-                textprops={'fontsize': 4, 'color': 'black'}  # Reduzindo o tamanho da fonte em 200%
-            )
-            
-            centre_circle = plt.Circle((0,0), 0.70, fc='white')
-            ax.add_artist(centre_circle)
-            
-            ax.legend(
-                wedges,
-                lead_time_df["Tipo"],
-                title="Tipos",
-                loc="lower right",
-                bbox_to_anchor=(1.5, 0),
-                prop={'size': 6},
-                title_fontsize='8'
-            )
-            
-            ax.set_title("Lead Time Médio (horas)", fontsize=10)
-            st.pyplot(fig, bbox_inches='tight')
-            
-            st.dataframe(lead_time_df.set_index("Tipo"), use_container_width=True)
-        else:
-            st.warning("Nenhuma OS concluída disponível")
 
 def pagina_supervisao():
     st.header("🔐 Área de Supervisão")
