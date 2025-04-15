@@ -18,7 +18,7 @@ def carregar_imagem(caminho_arquivo):
 
 # Configurações da página
 st.set_page_config(
-    page_title="Sistema de Ordens de Serviço",
+    page_title="Sistema de Ordens de Serviço 4.0",
     page_icon="🔧",
     layout="wide"
 )
@@ -32,7 +32,7 @@ except ImportError:
     st.warning("Funcionalidade do GitHub não disponível (PyGithub não instalado)")
 
 # Constantes
-LOCAL_FILENAME = "ordens_servico.csv"
+LOCAL_FILENAME = "ordens_servico4.0.csv"
 BACKUP_DIR = "backups"
 MAX_BACKUPS = 10
 SENHA_SUPERVISAO = "king@2025"
@@ -157,7 +157,7 @@ def fazer_backup():
 
 def limpar_backups_antigos(max_backups):
     """Remove backups antigos mantendo apenas os mais recentes"""
-    backups = sorted(glob.glob(os.path.join(BACKUP_DIR, "ordens_servico_*.csv")))
+    backups = sorted(glob.glob(os.path.join(BACKUP_DIR, "ordens_servico4.0_*.csv")))
     while len(backups) > max_backups:
         try:
             os.remove(backups[0])
@@ -167,7 +167,7 @@ def limpar_backups_antigos(max_backups):
 
 def carregar_ultimo_backup():
     """Retorna o caminho do backup mais recente"""
-    backups = sorted(glob.glob(os.path.join(BACKUP_DIR, "ordens_servico_*.csv")))
+    backups = sorted(glob.glob(os.path.join(BACKUP_DIR, "ordens_servico4.0_*.csv")))
     if backups:
         return backups[-1]
     return None
@@ -248,7 +248,7 @@ def pagina_inicial():
         st.markdown(f'<div style="margin-top: 10px;"><img src="{logo}" width="60"></div>', 
                    unsafe_allow_html=True)
     with col2:
-        st.markdown("<h1 style='font-size: 2.5em;'>SISTEMA DE GESTÃO DE ORDENS DE SERVIÇO</h1>", 
+        st.markdown("<h1 style='font-size: 2.5em;'>SISTEMA DE GESTÃO DE ORDENS DE SERVIÇO 4.0</h1>", 
                    unsafe_allow_html=True)
 
     st.markdown("<p style='text-align: center; font-size: 1.2em;'>King & Joe</p>", 
@@ -295,7 +295,7 @@ def pagina_inicial():
     - 🔐 **Supervisão** (área restrita)
     """)
 
-    backups = sorted(glob.glob(os.path.join(BACKUP_DIR, "ordens_servico_*.csv")), reverse=True)
+    backups = sorted(glob.glob(os.path.join(BACKUP_DIR, "ordens_servico4.0_*.csv")), reverse=True)
     if backups:
         with st.expander("📁 Backups disponíveis"):
             st.write(f"Último backup: {os.path.basename(backups[0])}")
@@ -683,7 +683,7 @@ def atualizar_os():
 
 def gerenciar_backups():
     st.header("💾 Gerenciamento de Backups")
-    backups = sorted(glob.glob(os.path.join(BACKUP_DIR, "ordens_servico_*.csv")), reverse=True)
+    backups = sorted(glob.glob(os.path.join(BACKUP_DIR, "ordens_servico4.0_*.csv")), reverse=True)
     
     if not backups:
         st.warning("Nenhum backup disponível")
@@ -739,8 +739,8 @@ def configurar_github():
         return
     
     with st.form("github_config_form"):
-        repo = st.text_input("Repositório GitHub (user/repo)", value=GITHUB_REPO or "vilelarobson0971/os_manut")
-        filepath = st.text_input("Caminho do arquivo no repositório", value=GITHUB_FILEPATH or "ordens_servico.csv")
+        repo = st.text_input("Repositório GitHub (user/repo)", value=GITHUB_REPO or "vilelarobson0971/)OS_4.0")
+        filepath = st.text_input("Caminho do arquivo no repositório", value=GITHUB_FILEPATH or "ordens_servico4.0.csv")
         token = st.text_input("Token de acesso GitHub", type="password", value=GITHUB_TOKEN or "")
         
         submitted = st.form_submit_button("Salvar Configurações")
@@ -824,7 +824,7 @@ def main():
         pagina_supervisao()
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown("**Sistema de Ordens de Serviço**")
+    st.sidebar.markdown("**Sistema de Ordens de Serviço 4.0**")
     st.sidebar.markdown("Versão 2.5 com Múltiplos Executantes")
     st.sidebar.markdown("Desenvolvido por Robson Vilela")
 
