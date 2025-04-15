@@ -739,7 +739,7 @@ def configurar_github():
         return
     
     with st.form("github_config_form"):
-        repo = st.text_input("Repositório GitHub (user/repo)", value=GITHUB_REPO or "vilelarobson0971/)OS_4.0")
+        repo = st.text_input("Repositório GitHub (user/repo)", value=GITHUB_REPO or "vilelarobson0971/OS_4.0")
         filepath = st.text_input("Caminho do arquivo no repositório", value=GITHUB_FILEPATH or "ordens_servico4.0.csv")
         token = st.text_input("Token de acesso GitHub", type="password", value=GITHUB_TOKEN or "")
         
