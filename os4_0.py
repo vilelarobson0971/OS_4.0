@@ -15,7 +15,7 @@ def carregar_imagem(caminho_arquivo):
         dados = f.read()
         encoded = base64.b64encode(dados).decode()
     return f"data:image/png;base64,{encoded}"
-    
+
 # Configurações da página
 st.set_page_config(
     page_title="Sistema de Ordens de Serviço",
@@ -32,7 +32,7 @@ except ImportError:
     st.warning("Funcionalidade do GitHub não disponível (PyGithub não instalado)")
 
 # Constantes
-LOCAL_FILENAME = "ordens_servico4.0.csv"
+LOCAL_FILENAME = "ordens_servico.csv"
 BACKUP_DIR = "backups"
 MAX_BACKUPS = 10
 SENHA_SUPERVISAO = "king@2025"
@@ -469,7 +469,7 @@ def dashboard():
                 
                 # Criar listas de meses e anos disponíveis
                 meses = list(range(1, 13))
-                anos = list(range(2020, 2031))  # De 2020 até 2030
+                anos = list(range(2024, 2031))  # De 2024 até 2030
                 
                 mes_selecionado = st.selectbox("Mês", meses, format_func=lambda x: f"{x:02d}")
                 ano_selecionado = st.selectbox("Ano", anos)
@@ -739,8 +739,8 @@ def configurar_github():
         return
     
     with st.form("github_config_form"):
-        repo = st.text_input("Repositório GitHub (user/repo)", value=GITHUB_REPO or "vilelarobson0971/OS_4.0")
-        filepath = st.text_input("Caminho do arquivo no repositório", value=GITHUB_FILEPATH or "ordens_servico4.0.csv")
+        repo = st.text_input("Repositório GitHub (user/repo)", value=GITHUB_REPO or "vilelarobson0971/os_manut")
+        filepath = st.text_input("Caminho do arquivo no repositório", value=GITHUB_FILEPATH or "ordens_servico.csv")
         token = st.text_input("Token de acesso GitHub", type="password", value=GITHUB_TOKEN or "")
         
         submitted = st.form_submit_button("Salvar Configurações")
@@ -782,6 +782,21 @@ def main():
         
     inicializar_arquivos()
     
+    # Adiciona o JavaScript para recarregar a página a cada 10 minutos (600000 milissegundos)
+    st.markdown("""
+    <script>
+    function checkReload() {
+        // Verifica se estamos na página principal (não na área de supervisão)
+        if (!window.location.href.includes('Supervis%C3%A3o')) {
+            setTimeout(function() {
+                window.location.reload();
+            }, 600000); // 10 minutos = 600000 ms
+        }
+    }
+    window.onload = checkReload;
+    </script>
+    """, unsafe_allow_html=True)
+    
     st.sidebar.title("Menu")
     opcao = st.sidebar.selectbox(
         "Selecione",
@@ -810,7 +825,7 @@ def main():
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("**Sistema de Ordens de Serviço**")
-    st.sidebar.markdown("Versão 4.0 com Múltiplos Executantes")
+    st.sidebar.markdown("Versão 2.5 com Múltiplos Executantes")
     st.sidebar.markdown("Desenvolvido por Robson Vilela")
 
 if __name__ == "__main__":
