@@ -337,22 +337,20 @@ def inicializar_arquivos():
             df.to_csv(LOCAL_FILENAME, index=False)
 
 
-
 def main():
     if 'notificacoes_limpas' not in st.session_state:
         st.session_state.notificacoes_limpas = False
         
     inicializar_arquivos()
     
-    # Adiciona o JavaScript para recarregar a página a cada 10 minutos (600000 milissegundos)
+    # Adiciona o JavaScript para recarregar a página a cada 10 minutos
     st.markdown("""
     <script>
     function checkReload() {
-        // Verifica se estamos na página principal (não na área de supervisão)
         if (!window.location.href.includes('Supervis%C3%A3o')) {
             setTimeout(function() {
                 window.location.reload();
-            }, 600000); // 10 minutos = 600000 ms
+            }, 600000);
         }
     }
     window.onload = checkReload;
@@ -389,6 +387,7 @@ def main():
     st.sidebar.markdown("**Sistema de Ordens de Serviço 4.0**")
     st.sidebar.markdown("Versão 2.5 com Múltiplos Executantes")
     st.sidebar.markdown("Desenvolvido por Robson Vilela")
+
 
 if __name__ == "__main__":
     main()
