@@ -336,7 +336,7 @@ def inicializar_arquivos():
                                      "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente", "Observações"])
             df.to_csv(LOCAL_FILENAME, index=False)
 
-[... continue com todo o restante do código original ...]
+
 
 def main():
     if 'notificacoes_limpas' not in st.session_state:
