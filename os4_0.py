@@ -210,7 +210,6 @@ def cadastrar_os():
                     time.sleep(1)
                     st.rerun()
 
-[... restante do código permanece exatamente igual até a função configurar_github() ...]
 
 def configurar_github():
     st.header("⚙️ Configuração do GitHub e Email")
