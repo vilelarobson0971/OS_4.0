@@ -160,7 +160,7 @@ def inicializar_arquivos():
                                      "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente", "Observações"])
             df.to_csv(LOCAL_FILENAME, index=False)
 
-[... restante do código permanece exatamente igual até a função cadastrar_os() ...]
+
 
 def cadastrar_os():
     st.header("📝 Cadastrar Nova Ordem de Serviço")
