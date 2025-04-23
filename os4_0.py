@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from datetime import datetime, timedelta
 import os
 import shutil
@@ -9,7 +8,7 @@ import time
 import glob
 import base64
 import json
-import pywhatkit as pwk  # Adicionado para envio de WhatsApp
+import pywhatkit as pwk
 
 def carregar_imagem(caminho_arquivo):
     with open(caminho_arquivo, "rb") as f:
@@ -46,7 +45,7 @@ BACKUP_DIR = "backups"
 MAX_BACKUPS = 10
 SENHA_SUPERVISAO = "king@2025"
 CONFIG_FILE = "config.json"
-WHATSAPP_NUMBER = "+5543991492882"  # Número de WhatsApp para notificações
+WHATSAPP_NUMBER = "+5543991492882"
 
 # Executantes pré-definidos
 EXECUTANTES_PREDEFINIDOS = ["Robson", "Guilherme", "Paulinho"]
@@ -73,14 +72,13 @@ STATUS_OPCOES = {
 }
 
 def enviar_notificacao_whatsapp(os_id, descricao, urgente):
-    """Envia notificação por WhatsApp quando uma nova OS é aberta"""
     if not WHATSAPP_AVAILABLE:
         return False
     
     try:
         now = datetime.now()
         hora = now.hour
-        minuto = now.minute + 1  # Enviar daqui a 1 minuto
+        minuto = now.minute + 1
         
         mensagem = f"⚠️ *NOVA ORDEM DE SERVIÇO* ⚠️\n\n"
         mensagem += f"*ID:* {os_id}\n"
@@ -102,7 +100,6 @@ def enviar_notificacao_whatsapp(os_id, descricao, urgente):
         return False
 
 def carregar_config():
-    """Carrega as configurações do GitHub do arquivo config.json"""
     global GITHUB_REPO, GITHUB_FILEPATH, GITHUB_TOKEN
     try:
         if os.path.exists(CONFIG_FILE):
@@ -115,18 +112,16 @@ def carregar_config():
         st.error(f"Erro ao carregar configurações: {str(e)}")
 
 def converter_arquivo_antigo(df):
-    """Converte o formato antigo (com 'Executante') para o novo (com 'Executante1' e 'Executante2')"""
     if 'Executante' in df.columns and 'Executante1' not in df.columns:
         df['Executante1'] = df['Executante']
         df['Executante2'] = ""
-        df['Observações'] = ""  # Adiciona coluna de observações se não existir
+        df['Observações'] = ""
         df.drop('Executante', axis=1, inplace=True)
-    if 'Observações' not in df.columns:  # Garante que a coluna existe
+    if 'Observações' not in df.columns:
         df['Observações'] = ""
     return df
 
 def inicializar_arquivos():
-    """Garante que todos os arquivos necessários existam e estejam válidos"""
     os.makedirs(BACKUP_DIR, exist_ok=True)
     carregar_config()
     
@@ -141,7 +136,6 @@ def inicializar_arquivos():
             df.to_csv(LOCAL_FILENAME, index=False)
 
 def baixar_do_github():
-    """Baixa o arquivo do GitHub se estiver mais atualizado"""
     if not GITHUB_AVAILABLE:
         st.error("Funcionalidade do GitHub não está disponível")
         return False
@@ -161,7 +155,6 @@ def baixar_do_github():
         return False
 
 def enviar_para_github():
-    """Envia o arquivo local para o GitHub"""
     if not GITHUB_AVAILABLE:
         st.error("Funcionalidade do GitHub não disponível")
         return False
@@ -185,7 +178,6 @@ def enviar_para_github():
         return False
 
 def fazer_backup():
-    """Cria um backup dos dados atuais"""
     if os.path.exists(LOCAL_FILENAME) and os.path.getsize(LOCAL_FILENAME) > 0:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_name = os.path.join(BACKUP_DIR, f"ordens_servico_{timestamp}.csv")
@@ -195,7 +187,6 @@ def fazer_backup():
     return None
 
 def limpar_backups_antigos(max_backups):
-    """Remove backups antigos mantendo apenas os mais recentes"""
     backups = sorted(glob.glob(os.path.join(BACKUP_DIR, "ordens_servico4.0_*.csv")))
     while len(backups) > max_backups:
         try:
@@ -205,14 +196,12 @@ def limpar_backups_antigos(max_backups):
             continue
 
 def carregar_ultimo_backup():
-    """Retorna o caminho do backup mais recente"""
     backups = sorted(glob.glob(os.path.join(BACKUP_DIR, "ordens_servico4.0_*.csv")))
     if backups:
         return backups[-1]
     return None
 
 def carregar_csv():
-    """Carrega os dados do CSV local"""
     try:
         if not os.path.exists(LOCAL_FILENAME):
             inicializar_arquivos()
@@ -251,7 +240,6 @@ def carregar_csv():
                                    "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente", "Observações"])
 
 def salvar_csv(df):
-    """Salva o DataFrame no arquivo CSV local e faz backup"""
     try:
         colunas_necessarias = ["ID", "Descrição", "Data", "Hora Abertura", "Solicitante", "Local", 
                              "Tipo", "Status", "Data Conclusão", "Hora Conclusão", "Executante1", "Executante2", "Urgente", "Observações"]
@@ -278,12 +266,10 @@ def salvar_csv(df):
         return False
 
 def pagina_inicial():
-    # Carrega a imagem
     logo = carregar_imagem("logo.png")
     
     col1, col2 = st.columns([1, 15])
     with col1:
-        # Substitui o emoji pela imagem
         st.markdown(f'<div style="margin-top: 10px;"><img src="{logo}" width="60"></div>', 
                    unsafe_allow_html=True)
     with col2:
@@ -296,16 +282,12 @@ def pagina_inicial():
 
     df = carregar_csv()
     if not df.empty:
-        # Mostrar apenas OS com status "Pendente"
         novas_os = df[df["Status"] == "Pendente"]
         if not novas_os.empty:
-            # Pegar as últimas 3 OS (ou menos se não houver 3)
-            ultimas_os = novas_os.tail(3).iloc[::-1]  # Inverte para mostrar a mais recente primeiro
+            ultimas_os = novas_os.tail(3).iloc[::-1]
             
-            # Container para as notificações
             with st.container():
-                # Botão para limpar notificações
-                if st.button("🗑️ Limrar Notificações", key="limpar_notificacoes"):
+                if st.button("🗑️ Limpar Notificações", key="limpar_notificacoes"):
                     st.session_state.notificacoes_limpas = True
                     st.rerun()
                 
@@ -386,7 +368,6 @@ def cadastrar_os():
 
                 df = pd.concat([df, nova_os], ignore_index=True)
                 if salvar_csv(df):
-                    # Envia notificação por WhatsApp
                     if WHATSAPP_AVAILABLE:
                         enviar_notificacao_whatsapp(novo_id, descricao, urgente)
                     
@@ -495,7 +476,6 @@ def dashboard():
     with tab2:
         st.subheader("OS por Executantes")
         
-        # Adicionando filtro por período
         col1, col2 = st.columns(2)
         with col1:
             periodo = st.selectbox("Período", ["Todos", "Por Mês/Ano"])
@@ -504,29 +484,22 @@ def dashboard():
         
         if periodo == "Por Mês/Ano":
             with col2:
-                # Converter a coluna Data Conclusão para datetime
                 df_filtrado['Data Conclusão'] = pd.to_datetime(df_filtrado['Data Conclusão'], dayfirst=True, errors='coerce')
-                
-                # Filtrar apenas OS concluídas
                 df_filtrado = df_filtrado[df_filtrado['Status'] == 'Concluído']
                 
-                # Criar listas de meses e anos disponíveis
                 meses = list(range(1, 13))
-                anos = list(range(2024, 2031))  # De 2024 até 2030
+                anos = list(range(2024, 2031))
                 
                 mes_selecionado = st.selectbox("Mês", meses, format_func=lambda x: f"{x:02d}")
                 ano_selecionado = st.selectbox("Ano", anos)
                 
-                # Filtrar os dados pela data de conclusão
                 df_filtrado = df_filtrado[
                     (df_filtrado['Data Conclusão'].dt.month == mes_selecionado) & 
                     (df_filtrado['Data Conclusão'].dt.year == ano_selecionado)
                 ]
         else:
-            # Filtrar apenas OS concluídas quando selecionado "Todos"
             df_filtrado = df_filtrado[df_filtrado['Status'] == 'Concluído']
         
-        # Concatenar executantes e filtrar valores inválidos
         executantes = pd.concat([df_filtrado["Executante1"], df_filtrado["Executante2"]])
         executantes = executantes[~executantes.isin(['', 'nan'])]
         
@@ -569,10 +542,11 @@ def dashboard():
         if not status_counts.empty:
             fig, ax = plt.subplots(figsize=(3, 2))
             
+            colors = ['#ff9999','#66b3ff','#99ff99','#ffcc99']
             bars = ax.bar(
                 status_counts.index,
                 status_counts.values,
-                color=sns.color_palette("pastel")
+                color=colors
             )
             
             for bar in bars:
@@ -808,6 +782,7 @@ def configurar_github():
                     GITHUB_TOKEN = token
                     
                     st.success("Configurações salvas e validadas com sucesso!")
+                    
                     if baixar_do_github():
                         st.success("Dados sincronizados do GitHub!")
                     else:
@@ -824,15 +799,13 @@ def main():
         
     inicializar_arquivos()
     
-    # Adiciona o JavaScript para recarregar a página a cada 10 minutos (600000 milissegundos)
     st.markdown("""
     <script>
     function checkReload() {
-        // Verifica se estamos na página principal (não na área de supervisão)
         if (!window.location.href.includes('Supervis%C3%A3o')) {
             setTimeout(function() {
                 window.location.reload();
-            }, 600000); // 10 minutos = 600000 ms
+            }, 600000);
         }
     }
     window.onload = checkReload;
@@ -865,6 +838,8 @@ def main():
     elif opcao == "🔐 Supervisão":
         pagina_supervisao()
 
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("**Sistema de Gestão de Ordens de Serviço**")
     st.sidebar.markdown("---")
     st.sidebar.markdown("**Sistema de Gestão de Ordens de Serviço**")
     st.sidebar.markdown("Versão 2.5 com Múltiplos Executantes")
