@@ -808,7 +808,6 @@ def configurar_github():
                     GITHUB_TOKEN = token
                     
                     st.success("Configurações salvas e validadas com sucesso!")
-                    
                     if baixar_do_github():
                         st.success("Dados sincronizados do GitHub!")
                     else:
