@@ -1,7 +1,7 @@
 PyGithub==1.59.0
-matplotlib>=3.5.0
-seaborn>=0.11.0
+matplotlib==3.5.3
+seaborn==0.11.2
 streamlit==1.32.2
 pandas==2.1.4
 numpy==1.26.3
-pywhatkit==5.4.1
+pywhatkit==5.4
